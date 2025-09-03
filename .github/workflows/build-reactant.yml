@@ -36,6 +36,7 @@ jobs:
       BINARYBUILDER_RUNNER: privileged
       BINARYBUILDER_USE_CCACHE: true
       JULIA_REGISTRYCI_AUTOMERGE: true
+      BUILD_PROJECT: H/HelloWorldC
 
     steps:
       - name: Set JULIA_PROJECT
@@ -57,7 +58,38 @@ jobs:
         run: |
           using Pkg
           Pkg.instantiate()
+      - name: Generate list of platforms
+        shell: julia --color=yes {0}
+        # Adapted from <https://github.com/JuliaPackaging/Yggdrasil/blob/e6019028ad8dafb9507b9d9f4d09d04b11640461/.buildkite/generator.jl>.
+        run: |
+          TEMP = mktempdir()
+          NAME = basename("${{ env.BUILD_PROJECT }}")
+          exec(cmd) = @assert success(pipeline(cmd; stderr=stderr, stdout=stdout))
+          julia(args) = `$(Base.julia_cmd()) $(args)`
+
+          cd("${{ env.BUILD_PROJECT }}") do
+              @info "Generating meta.json..."
+              JSON_PATH = "$(TEMP)/$(NAME).meta.json"
+              julia(`--compile=min ./build_tarballs.jl --meta-json="$(JSON_PATH)"`) |> exec
+
+              # Generate platforms
+              julia(`$(ENV["GITHUB_WORKSPACE"])/.ci/generate_platforms.jl "$(JSON_PATH)" $(TEMP)/$(NAME).platforms.list`) |> exec
+          end
+
+          PLATFORMS = split(readchomp(joinpath(TEMP, "$(NAME).platforms.list")))
+          if isempty(PLATFORMS)
+              @error "Unable to determine the proper platforms" NAME
+          end
+
+          @info "" PLATFORMS
+
+          platforms = "platforms=[$(join(repr.(PLATFORMS), ','))]"
+          @info "" platforms
+
+          open(ENV["GITHUB_OUTPUT"], "a") do io
+              println(io, platforms)
+          end
       - name: Build Reactant
         run: |
           julia --color=yes --threads=16 build_tarballs.jl --verbose
-        working-directory: H/HelloWorldC
+        working-directory: ${{ env.BUILD_PROJECT }}
