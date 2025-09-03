@@ -1,4 +1,4 @@
-name: Test BinaryBuilderBase
+name: Build Reactant_jll
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  test-bbb:
+  build-reactant-jll:
     name: BinaryBuilderBase - ${{ matrix.os }} - Julia ${{ matrix.julia_version }}
     runs-on: ${{ matrix.os }}
 
@@ -32,43 +32,32 @@ jobs:
           - '1.11'
 
     env:
-      BINARYBUILDER_RUNNER: privileged
       BINARYBUILDER_AUTOMATIC_APPLE: true
+      BINARYBUILDER_RUNNER: privileged
+      BINARYBUILDER_USE_CCACHE: true
+      JULIA_REGISTRYCI_AUTOMERGE: true
 
     steps:
+      - name: Set JULIA_PROJECT
+        # We have to use `${GITHUB_WORKSPACE}` instead of `github.workspace` because GitHub
+        # is terrible and the two don't match inside containers:
+        # https://github.com/actions/runner/issues/2058
+        run:
+          echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
       - uses: actions/checkout@v5
-        with:
-          repository: JuliaPackaging/BinaryBuilderBase.jl
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia_version }}
       - name: Load Julia packages from cache
         id: julia-cache
         uses: julia-actions/cache@v2
-      - name: Install BinaryBuilderBase
+      - name: Instantiate environment
         timeout-minutes: 20
-        shell: julia --project=@. --color=yes {0}
+        shell: julia --color=yes {0}
         run: |
           using Pkg
           Pkg.instantiate()
-      - name: System info
+      - name: Build Reactant
         run: |
-          julia --check-bounds=yes --color=yes --depwarn=yes --inline=yes --project=@. -e "using BinaryBuilderBase; BinaryBuilderBase.versioninfo()"
-      - name: Test BinaryBuilderBase
-        timeout-minutes: 60
-        run: |
-          eval `ssh-agent`
-          chmod 0600 test/id_ecdsa_deploy_helloworld_c_jll_read_only
-          mkdir -p ~/.ssh
-          touch ~/.ssh/known_hosts
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          ssh-add test/id_ecdsa_deploy_helloworld_c_jll_read_only
-          julia --check-bounds=yes --color=yes --depwarn=yes --inline=yes --project=@. -e 'using Pkg; Pkg.instantiate(); Pkg.test(coverage=true)'
-      - name: Save Julia depot cache on cancel or failure
-        id: julia-cache-save
-        if: cancelled() || failure()
-        uses: actions/cache/save@v4
-        with: 
-          path: |
-            ${{ steps.julia-cache.outputs.cache-paths }}
-          key: ${{ steps.julia-cache.outputs.cache-key }}
+          julia --color=yes --threads=16 build_tarballs.jl --verbose
+        working-directory: H/HelloWorldC
