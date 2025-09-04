@@ -20,8 +20,8 @@ env:
   BINARYBUILDER_RUNNER: privileged
   BINARYBUILDER_USE_CCACHE: true
   JULIA_REGISTRYCI_AUTOMERGE: true
-  JULIA_VERSION: '1.11'
-  BUILD_PROJECT: H/HelloWorldC
+  JULIA_VERSION: '1.11.6'
+  BUILD_PROJECT: R/Reactant
 
 jobs:
   define-matrix:
