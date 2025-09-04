@@ -28,9 +28,6 @@ jobs:
     name: Define matrix
     runs-on: jll
 
-    strategy:
-      fail-fast: false
-
     outputs:
       platforms: ${{ steps.gen-platforms.outputs.platforms }}
 
@@ -121,3 +118,22 @@ jobs:
         run: |
           julia --color=yes --threads=16 build_tarballs.jl --verbose ${{ matrix.platform }}
         working-directory: ${{ env.BUILD_PROJECT }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: products-${{ matrix.platform }}
+          path: ${{ env.BUILD_PROJECT }}/products
+
+  register:
+    name: Register
+    runs-on: jll
+
+    needs: build-platforms
+
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          merge-multiple: true
+      - name: Check
+        run: |
+          pwd
+          ls -lhrt
