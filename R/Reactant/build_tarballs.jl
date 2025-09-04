@@ -10,14 +10,17 @@ version = v"0.0.237"
 
 sources = [
    GitSource(repo, "ce9246a1501676c133652eeee16e33e369dd8d3a"),
-   ArchiveSource("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz", "79ecc4b213d21ae5c389bea13c6ed23ca4804a45b7b076983356c28105580013"),
-   ArchiveSource("https://github.com/JuliaBinaryWrappers/Bazel_jll.jl/releases/download/Bazel-v7.6.1+0/Bazel.v7.6.1.x86_64-linux-musl-cxx03.tar.gz", "01ac6c083551796f1f070b0dc9c46248e6c49e01e21040b0c158f6e613733345")
+   FileSource("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz", "79ecc4b213d21ae5c389bea13c6ed23ca4804a45b7b076983356c28105580013"),
+   FileSource("https://github.com/JuliaBinaryWrappers/Bazel_jll.jl/releases/download/Bazel-v7.6.1+0/Bazel.v7.6.1.x86_64-linux-musl-cxx03.tar.gz", "01ac6c083551796f1f070b0dc9c46248e6c49e01e21040b0c158f6e613733345")
 ]
 
 # Bash recipe for building across all platforms
 script = raw"""
-export JAVA_HOME="`pwd`/jdk-21.0.7+6"
-export BAZEL="`pwd`/bin/bazel"
+cd ${WORKSPACE}/srcdir
+tar xzf OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz
+tar xzf Bazel.v7.6.1.x86_64-linux-musl-cxx03.tar.gz
+export JAVA_HOME="${PWD}/jdk-21.0.7+6"
+export BAZEL="${PWD}/bin/bazel"
 
 cd Reactant.jl/deps/ReactantExtra
 
@@ -31,12 +34,9 @@ if [[ "${target}" == *-apple-darwin* ]]; then
     # Compiling LLVM components within XLA requires macOS SDK 10.14
     # and then we use `std::reinterpret_pointer_cast` in ReactantExtra
     # which requires macOS SDK 11.3.
-    pushd $WORKSPACE/srcdir/MacOSX11.*.sdk
     rm -rf /opt/${target}/${target}/sys-root/System
     rm -rf /opt/${target}/${target}/sys-root/usr/include/libxml2
-    cp -ra usr/* "/opt/${target}/${target}/sys-root/usr/."
-    cp -ra System "/opt/${target}/${target}/sys-root/."
-    popd
+    tar --extract --file=${WORKSPACE}/srcdir/MacOSX11.3.sdk.tar.xz --directory="/opt/${target}/${target}/sys-root/." --strip-components=1 MacOSX11.3.sdk/System MacOSX11.3.sdk/usr    
 fi
 
 if [[ "${bb_full_target}" == *cuda_version+12.1* ]] || [[ "${bb_full_target}" == *cuda_version+12.4* ]]; then
@@ -494,8 +494,8 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     platform_sources = BinaryBuilder.AbstractSource[sources...]
     if Sys.isapple(platform)
         push!(platform_sources,
-              ArchiveSource("https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX11.3.sdk.tar.xz",
-                            "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"))
+              FileSource("https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX11.3.sdk.tar.xz",
+                         "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"))
     end
 
     if !Sys.isapple(platform)
