@@ -132,6 +132,8 @@ jobs:
         with:
           name: products-${{ matrix.platform }}
           path: ${{ env.BUILD_PROJECT }}/products
+          compression-level: 0
+          retention-days: 2
       - name: Cleanup
         if: ${{ always() }}
         timeout-minutes: 2
