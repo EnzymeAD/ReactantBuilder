@@ -17,8 +17,6 @@ sources = [
 # Bash recipe for building across all platforms
 script = raw"""
 ccache -s
-ccache -M 50G
-ccache -s
 
 cd ${WORKSPACE}/srcdir
 tar xzf OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz
