@@ -16,6 +16,10 @@ sources = [
 
 # Bash recipe for building across all platforms
 script = raw"""
+ccache -s
+ccache -M 50G
+ccache -s
+
 cd ${WORKSPACE}/srcdir
 tar xzf OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz
 tar xzf Bazel.v7.6.1.x86_64-linux-musl-cxx03.tar.gz
@@ -379,6 +383,8 @@ fi
 
 install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
 install_license ../../LICENSE
+
+ccache -s
 """
 
 # determine exactly which tarballs we should build
