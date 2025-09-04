@@ -39,6 +39,11 @@ jobs:
         run:
           echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
       - uses: actions/checkout@v5
+      - name: Cleanup
+        timeout-minutes: 2
+        run: |
+          ./clean_builds.sh
+          ./clean_products.sh
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ env.JULIA_VERSION }}
@@ -102,6 +107,11 @@ jobs:
         run:
           echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
       - uses: actions/checkout@v5
+      - name: Cleanup
+        timeout-minutes: 2
+        run: |
+          ./clean_builds.sh
+          ./clean_products.sh
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ env.JULIA_VERSION }}
@@ -122,6 +132,12 @@ jobs:
         with:
           name: products-${{ matrix.platform }}
           path: ${{ env.BUILD_PROJECT }}/products
+      - name: Cleanup
+        if: ${{ always() }}
+        timeout-minutes: 2
+        run: |
+          ./clean_builds.sh
+          ./clean_products.sh
 
   register:
     name: Register
