@@ -502,7 +502,7 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
                          "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"))
     end
 
-    if !Sys.isapple(platform)
+    if gpu == "cuda"
       push!(dependencies, Dependency(PackageSpec(; name="CUDA_Driver_jll")))
     end
 
