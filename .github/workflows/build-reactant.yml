@@ -39,7 +39,7 @@ jobs:
         run:
           echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
       - name: Cleanup
-        timeout-minutes: 2
+        timeout-minutes: 5
         shell: bash
         run: |
           if [[ -f ./clean_builds.sh ]]; then
@@ -109,7 +109,7 @@ jobs:
         run:
           echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
       - name: Cleanup
-        timeout-minutes: 2
+        timeout-minutes: 5
         shell: bash
         run: |
           if [[ -f ./clean_builds.sh ]]; then
@@ -143,7 +143,7 @@ jobs:
           retention-days: 2
       - name: Cleanup
         if: ${{ always() }}
-        timeout-minutes: 2
+        timeout-minutes: 5
         run: |
           ./clean_builds.sh
           ./clean_products.sh
