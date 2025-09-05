@@ -20,7 +20,7 @@ env:
   BINARYBUILDER_RUNNER: privileged
   BINARYBUILDER_USE_CCACHE: true
   JULIA_REGISTRYCI_AUTOMERGE: true
-  JULIA_VERSION: '1.11.6'
+  JULIA_VERSION: '~1.12.0-0'
   BUILD_PROJECT: R/Reactant
 
 jobs:
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ env.JULIA_VERSION }}
+          version: '${{ env.JULIA_VERSION }}'
       # - name: Load Julia packages from cache
       #   id: julia-cache
       #   uses: julia-actions/cache@v2
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ env.JULIA_VERSION }}
+          version: '${{ env.JULIA_VERSION }}'
       # - name: Load Julia packages from cache
       #   id: julia-cache
       #   uses: julia-actions/cache@v2
