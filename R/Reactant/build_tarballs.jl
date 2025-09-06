@@ -6,13 +6,17 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
+reactant_commit = "ce9246a1501676c133652eeee16e33e369dd8d3a"
 version = v"0.0.237"
 
 sources = [
-   GitSource(repo, "ce9246a1501676c133652eeee16e33e369dd8d3a"),
+   GitSource(repo, reactant_commit),
    FileSource("https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz", "79ecc4b213d21ae5c389bea13c6ed23ca4804a45b7b076983356c28105580013"),
    FileSource("https://github.com/JuliaBinaryWrappers/Bazel_jll.jl/releases/download/Bazel-v7.6.1+0/Bazel.v7.6.1.x86_64-linux-musl-cxx03.tar.gz", "01ac6c083551796f1f070b0dc9c46248e6c49e01e21040b0c158f6e613733345")
 ]
+
+# When we run CI in Enzyme-JAX repository we need to be able to change the commit to check out.
+enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "")
 
 # Bash recipe for building across all platforms
 script = raw"""
@@ -31,6 +35,11 @@ echo GCC version: $(gcc --version)
 
 GCC_VERSION=$(gcc --version | head -1 | awk '{ print $3 }')
 GCC_MAJOR_VERSION=$(echo "${GCC_VERSION}" | cut -d. -f1)
+
+# Change Enzyme-JAX commit, necessary in CI of that repository.
+if [[ -n "${ENZYME_JAX_COMMIT}" ]]; then
+   sed -i.bak 's/ENZYMEXLA_COMMIT = ".*"/ENZYMEXLA_COMMIT = "'${ENZYME_JAX_COMMIT}'"/' WORKSPACE
+fi
 
 if [[ "${target}" == *-apple-darwin* ]]; then
     # Compiling LLVM components within XLA requires macOS SDK 10.14
@@ -476,6 +485,13 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
         continue
     end
 
+    # When we're running CI for Enzyme-JAX, only build few platforms
+    if !isempty(enzyme_jax_commit)
+        if !((gpu == "cuda" && VersionNumber(cuda_version) >= v"13.0") || (Sys.isapple(platform) && mode == "opt"))
+            continue
+        end
+    end
+
     hermetic_cuda_version_map = Dict(
         # Our platform tags use X.Y version scheme, but for some CUDA versions we need to
         # pass Bazel a full version number X.Y.Z.  See `CUDA_REDIST_JSON_DICT` in
@@ -494,6 +510,7 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     prefix="""
     MODE=$(mode)
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
+    ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
     """
     platform_sources = BinaryBuilder.AbstractSource[sources...]
     if Sys.isapple(platform)
@@ -627,5 +644,9 @@ for (i,build) in enumerate(builds)
                    preferred_gcc_version=build.preferred_gcc_version, build.preferred_llvm_version, julia_compat="1.10",
 		   compression_format="xz",
                    # We use GCC 13, so we can't dlopen the library during audit
-                   augment_platform_block, lazy_artifacts=true, lock_microarchitecture=false, dont_dlopen=true)
+                   augment_platform_block, lazy_artifacts=true, lock_microarchitecture=false, dont_dlopen=true,
+                   # When we're running CI for Enzyme-JAX (i.e. when the commit is
+                   # non-empty), don't run the audit to save time, we don't need it.
+                   skip_audit=!isempty(enzyme_jax_commit),
+                   )
 end

@@ -19,7 +19,12 @@ on:
         type: string
         default: 'R/Reactant'
       reactantbuilder_ref:
-        description: 'The Git ref of EnzymeAD/ReactantBuilder to check out'
+        description: 'The Git ref of EnzymeAD/ReactantBuilder to check out (leave empty to use the default)'
+        required: false
+        type: string
+        default: ''
+      enzyme_jax_commit:
+        description: 'The Git commit of EnzymeAD/Enzyme-JAX to use for the build (leave empty to use the default)'
         required: false
         type: string
         default: ''
@@ -27,6 +32,7 @@ on:
 env:
   BINARYBUILDER_AUTOMATIC_APPLE: true
   BINARYBUILDER_RUNNER: privileged
+  BINARYBUILDER_NPROC: 36
   BINARYBUILDER_USE_CCACHE: true
   JULIA_REGISTRYCI_AUTOMERGE: true
 
@@ -100,6 +106,8 @@ jobs:
           open(ENV["GITHUB_OUTPUT"], "a") do io
               println(io, platforms)
           end
+        env:
+          ENZYME_JAX_COMMIT: ${{ inputs.enzyme_jax_commit }}
 
   build-platforms:
     name: Build ${{ matrix.platform }}
@@ -148,6 +156,8 @@ jobs:
         run: |
           julia --color=yes --threads=16 build_tarballs.jl --verbose ${{ matrix.platform }}
         working-directory: ${{ inputs.build_project }}
+        env:
+          ENZYME_JAX_COMMIT: ${{ inputs.enzyme_jax_commit }}
       - uses: actions/upload-artifact@v4
         with:
           name: products-${{ matrix.platform }}
@@ -164,6 +174,8 @@ jobs:
   register:
     name: Register
     runs-on: ${{ inputs.os }}
+    # We don't register the package when we're running CI for Enzyme-JAX.
+    if: ${{ inputs.enzyme_jax_commit != '' }}
 
     needs: build-platforms
 
