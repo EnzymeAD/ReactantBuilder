@@ -39,7 +39,7 @@ env:
 jobs:
   define-matrix:
     name: Define matrix
-    runs-on: ${{ inputs.os }}
+    runs-on: 'ubuntu-latest'
 
     outputs:
       platforms: ${{ steps.gen-platforms.outputs.platforms }}
@@ -68,9 +68,9 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '${{ inputs.julia_version }}'
-      # - name: Load Julia packages from cache
-      #   id: julia-cache
-      #   uses: julia-actions/cache@v2
+      - name: Load Julia packages from cache
+        id: julia-cache
+        uses: julia-actions/cache@v2
       - name: Instantiate environment
         timeout-minutes: 20
         shell: julia --color=yes {0}
@@ -126,6 +126,21 @@ jobs:
         # https://github.com/actions/runner/issues/2058
         run:
           echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
+      - name: Set and create Julia depot path
+        run: |
+          # Set a different depot path for each runner, to avoid clashes
+          JULIA_DEPOT_PATH="${HOME}/.jll-julia-depot/${{ runner.name }}"
+          echo "JULIA_DEPOT_PATH=${JULIA_DEPOT_PATH}:" >> "${GITHUB_ENV}"
+          # Make sure the depot exists
+          mkdir -pv "${JULIA_DEPOT_PATH}"
+      - name: Set and create ccache directory
+        run: |
+          # The ccache directory is thread-safe and so can be the same for all
+          # runners, but we need to set it specifically
+          BINARYBUILDER_CCACHE_DIR="${HOME}/.jll-ccache-dir"
+          echo "BINARYBUILDER_CCACHE_DIR=${BINARYBUILDER_CCACHE_DIR}" >> "${GITHUB_ENV}"
+          # Make sure the ccache directory exists
+          mkdir -pv "${BINARYBUILDER_CCACHE_DIR}"
       - name: Cleanup
         timeout-minutes: 5
         shell: bash
@@ -173,7 +188,7 @@ jobs:
 
   register:
     name: Register
-    runs-on: ${{ inputs.os }}
+    runs-on: 'ubuntu-latest'
     # We don't register the package when we're running CI for Enzyme-JAX.
     if: ${{ inputs.enzyme_jax_commit != '' }}
 
@@ -184,6 +199,12 @@ jobs:
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '${{ inputs.julia_version }}'
+      - name: Load Julia packages from cache
+        id: julia-cache
+        uses: julia-actions/cache@v2
       - uses: actions/download-artifact@v5
         with:
           merge-multiple: true
