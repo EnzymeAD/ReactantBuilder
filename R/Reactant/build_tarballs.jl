@@ -47,7 +47,7 @@ if [[ "${target}" == *-apple-darwin* ]]; then
     # which requires macOS SDK 11.3.
     rm -rf /opt/${target}/${target}/sys-root/System
     rm -rf /opt/${target}/${target}/sys-root/usr/include/libxml2
-    tar --extract --file=${WORKSPACE}/srcdir/MacOSX11.3.sdk.tar.xz --directory="/opt/${target}/${target}/sys-root/." --strip-components=1 MacOSX11.3.sdk/System MacOSX11.3.sdk/usr    
+    tar --extract --file=${WORKSPACE}/srcdir/MacOSX11.3.sdk.tar.xz --directory="/opt/${target}/${target}/sys-root/." --strip-components=1 MacOSX11.3.sdk/System MacOSX11.3.sdk/usr
 fi
 
 if [[ "${bb_full_target}" == *cuda_version+12.1* ]] || [[ "${bb_full_target}" == *cuda_version+12.4* ]]; then
@@ -307,7 +307,7 @@ if [[ "${target}" == *-darwin* ]]; then
     # sed -i.bak1 -e "s/\\"k8|/\\"${BAZEL_CPU}\\": \\":cc-compiler-k8\\", \\"k8|/g" \
     #             -e "s/cpu = \\"k8\\"/cpu = \\"${BAZEL_CPU}\\"/g" \
     #             /workspace/bazel_root/*/external/bazel_tools~cc_configure_extension~local_config_cc/BUILD
-   
+
     # sed -i.bak2 -e "s/\\":cpu_aarch64\\":/\\"@platforms\/\/cpu:aarch64\\":/g" \
     #             /workspace/bazel_root/*/external/xla/third_party/highwayhash/highwayhash.BUILD
 
@@ -321,7 +321,7 @@ if [[ "${target}" == *-darwin* ]]; then
     sed -i.bak1 -e "/whole-archive/d" \
                 -e "/gc-sections/d" \
                 bazel-bin/libReactantExtra.so-2.params
-    
+
     # # Show the params file for debugging, but convert newlines to spaces
     # cat bazel-bin/libReactantExtra.so-2.params | tr '\n' ' '
     # echo ""
@@ -571,12 +571,12 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     end
 
     should_build_platform(triplet(augmented_platform)) || continue
-	
+
     # The products that we will ensure are always built
     products = Product[
         LibraryProduct(["libReactantExtra", "libReactantExtra"], :libReactantExtra)
     ]
-	
+
     if gpu == "cuda"
     	for lib in (
 		"libnccl",
