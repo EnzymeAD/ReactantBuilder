@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: 'R/Reactant'
+      reactantbuilder_ref:
+        description: 'The Git ref of EnzymeAD/ReactantBuilder to check out'
+        required: false
+        type: string
+        default: ''
 
 env:
   BINARYBUILDER_AUTOMATIC_APPLE: true
@@ -51,6 +56,9 @@ jobs:
               ./clean_products.sh
           fi
       - uses: actions/checkout@v5
+        with:
+          repository: 'EnzymeAD/ReactantBuilder'
+          ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
       - uses: julia-actions/setup-julia@v2
         with:
           version: '${{ inputs.julia_version }}'
@@ -121,6 +129,9 @@ jobs:
               ./clean_products.sh
           fi
       - uses: actions/checkout@v5
+        with:
+          repository: 'EnzymeAD/ReactantBuilder'
+          ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
       - uses: julia-actions/setup-julia@v2
         with:
           version: '${{ inputs.julia_version }}'
@@ -158,6 +169,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: 'EnzymeAD/ReactantBuilder'
+          ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
       - uses: actions/download-artifact@v5
         with:
           merge-multiple: true
