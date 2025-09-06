@@ -1,0 +1,34 @@
+name: "Debug"
+
+on:
+  push:
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  debug:
+    name: Debug
+    runs-on: jll3
+
+    steps:
+      - name: Debug
+        shell: bash
+        run: |
+          tmate="tmate -S /tmp/tmate.sock"
+          newSessionExtra=""
+          setDefaultCommand=""
+
+          sudo apt install -y tmate
+
+          unset TMUX
+
+          ${tmate} ${newSessionExtra} ${setDefaultCommand} new-session -d
+          ${tmate} wait tmate-ready
+          echo "Created new session successfully"
+          echo "Fetching connection strings"
+          ${tmate} display -p '#{tmate_ssh}'
+          sleep 6000
