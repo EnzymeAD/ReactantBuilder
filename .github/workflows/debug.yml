@@ -3,32 +3,46 @@ name: "Debug"
 on:
   push:
 
-concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
-
 jobs:
   debug:
     name: Debug
-    runs-on: jll3
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os:
+          - jll1
+          - jll2
+          - jll3
+          - jll4
 
     steps:
       - name: Debug
         shell: bash
         run: |
-          tmate="tmate -S /tmp/tmate.sock"
-          newSessionExtra=""
-          setDefaultCommand=""
+          # tmate="tmate -S /tmp/tmate.sock"
+          # newSessionExtra=""
+          # setDefaultCommand=""
 
-          sudo apt install -y tmate
+          # sudo apt install -y tmate
 
-          unset TMUX
+          # unset TMUX
 
-          ${tmate} ${newSessionExtra} ${setDefaultCommand} new-session -d
-          ${tmate} wait tmate-ready
-          echo "Created new session successfully"
-          echo "Fetching connection strings"
-          ${tmate} display -p '#{tmate_ssh}'
-          sleep 6000
+          # ${tmate} ${newSessionExtra} ${setDefaultCommand} new-session -d
+          # ${tmate} wait tmate-ready
+          # echo "Created new session successfully"
+          # echo "Fetching connection strings"
+          # ${tmate} display -p '#{tmate_ssh}'
+          # sleep 6000
+
+          loginctl show-user "$USER" | grep -i Linger=
+          loginctl enable-linger "$USER"
+
+          for runner in 2 3 4; do
+              cd ${HOME}/actions-runner-${{ runner.name }}.${runner}
+              nohup ./run.sh < /dev/null &> .nohup-run-sh & disown
+          done
+
+          sleep 90
+
+          # loginctl disable-linger "$USER"
