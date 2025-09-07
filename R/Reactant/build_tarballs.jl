@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "ce9246a1501676c133652eeee16e33e369dd8d3a"
-version = v"0.0.237"
+reactant_commit = "6eaa03612cec900521960fed83c8686d76b645df"
+version = v"0.0.239"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -517,10 +517,6 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
         push!(platform_sources,
               FileSource("https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX11.3.sdk.tar.xz",
                          "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"))
-    end
-
-    if gpu == "cuda"
-      push!(dependencies, Dependency(PackageSpec(; name="CUDA_Driver_jll")))
     end
 
     if arch(platform) == "aarch64" && gpu == "cuda"
