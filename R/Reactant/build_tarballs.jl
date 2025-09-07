@@ -180,7 +180,6 @@ if [[ "${target}" == *-mingw* ]]; then
     BAZEL_BUILD_FLAGS+=(--copt=-DNOGDI)
     # BAZEL_BUILD_FLAGS+=(--compiler=clang)
     BAZEL_BUILD_FLAGS+=(--define=using_clang=true)
-    apk add --upgrade zlib --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
     if [[ "${target}" == x86_64* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:win_x86_64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
