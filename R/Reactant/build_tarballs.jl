@@ -486,7 +486,7 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
 
     # When we're running CI for Enzyme-JAX, only build few platforms
     if !isempty(enzyme_jax_commit)
-        if !((gpu == "cuda" && VersionNumber(cuda_version) >= v"13.0") || (Sys.isapple(platform) && mode == "opt"))
+        if !(Sys.islinux(platform) && gpu == "cuda") || (Sys.isapple(platform) && mode == "opt") || (Sys.iswindow(platform))
             continue
         end
     end
