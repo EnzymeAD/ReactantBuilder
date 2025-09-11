@@ -190,7 +190,7 @@ jobs:
     name: Register
     runs-on: 'ubuntu-latest'
     # We don't register the package when we're running CI for Enzyme-JAX.
-    if: ${{ inputs.enzyme_jax_commit != '' }}
+    if: ${{ inputs.enzyme_jax_commit == '' }}
 
     needs: build-platforms
 
