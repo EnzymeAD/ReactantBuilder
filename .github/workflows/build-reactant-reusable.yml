@@ -7,7 +7,7 @@ on:
         description: 'Julia version'
         required: false
         type: string
-        default: '1.7.3'
+        default: 'nightly'
       os:
         description: 'OS/Runner'
         required: false
