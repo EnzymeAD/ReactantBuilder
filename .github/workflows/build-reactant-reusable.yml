@@ -56,10 +56,10 @@ jobs:
         shell: bash
         run: |
           if [[ -f ./clean_builds.sh ]]; then
-              ./clean_builds.sh
+              sudo ./clean_builds.sh
           fi
           if [[ -f ./clean_products.sh ]]; then
-              ./clean_products.sh
+              sudo ./clean_products.sh
           fi
       - uses: actions/checkout@v5
         with:
@@ -146,10 +146,10 @@ jobs:
         shell: bash
         run: |
           if [[ -f ./clean_builds.sh ]]; then
-              ./clean_builds.sh
+              sudo ./clean_builds.sh
           fi
           if [[ -f ./clean_products.sh ]]; then
-              ./clean_products.sh
+              sudo ./clean_products.sh
           fi
       - uses: actions/checkout@v5
         with:
@@ -183,8 +183,8 @@ jobs:
         if: ${{ always() }}
         timeout-minutes: 5
         run: |
-          ./clean_builds.sh
-          ./clean_products.sh
+          sudo ./clean_builds.sh
+          sudo ./clean_products.sh
 
   register:
     name: Register
