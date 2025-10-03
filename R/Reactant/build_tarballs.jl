@@ -555,7 +555,7 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
         end
         push!(dependencies,
               # Build dependency because we statically link libc++
-              BuildDependency(PackageSpec("LLVMLibcxx_jll", preferred_llvm_version)),
+              BuildDependency(PackageSpec(; name="LLVMLibcxx_jll", version=string(preferred_llvm_version))),
               )
     end
 
