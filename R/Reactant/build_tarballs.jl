@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "71160f6660029cf49ee38171c7d397f878f2bbea"
-version = v"0.0.240"
+reactant_commit = "a087f8d9df1ef5d02eaa2b2d2ead2bc9bd79baef"
+version = v"0.0.246"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -503,6 +503,8 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     prefix="""
     MODE=$(mode)
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
+    # Don't use ccache on Yggdrasil, doesn't seem to work.
+    USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
     ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
     """
     platform_sources = BinaryBuilder.AbstractSource[sources...]
