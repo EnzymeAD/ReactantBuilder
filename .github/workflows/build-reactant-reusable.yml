@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: ''
+      reactant_commit:
+        description: 'The Git commit of Reactant to use in build_tarballs.jl (empty to leave it unchanged)'
+        required: false
+        type: string
+        default: ''
 
 env:
   BINARYBUILDER_AUTOMATIC_APPLE: true
@@ -77,6 +82,12 @@ jobs:
         run: |
           using Pkg
           Pkg.instantiate()
+      - name: Change Reactant commit
+        run: |
+          if [[ -n "${{ inputs.reactant_commit }}" ]]; then
+              echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
+              sed 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
+          fi
       - name: Generate list of platforms
         id: gen-platforms
         shell: julia --color=yes {0}
@@ -167,6 +178,12 @@ jobs:
         run: |
           using Pkg
           Pkg.instantiate()
+      - name: Change Reactant commit
+        run: |
+          if [[ -n "${{ inputs.reactant_commit }}" ]]; then
+              echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
+              sed 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
+          fi
       - name: Build Reactant
         run: |
           julia --color=yes --threads=16 build_tarballs.jl --verbose ${{ matrix.platform }}
@@ -208,6 +225,12 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           merge-multiple: true
+      - name: Change Reactant commit
+        run: |
+          if [[ -n "${{ inputs.reactant_commit }}" ]]; then
+              echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
+              sed 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
+          fi
       - name: Check
         run: |
           pwd
