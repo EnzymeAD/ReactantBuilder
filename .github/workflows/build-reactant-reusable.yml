@@ -86,7 +86,7 @@ jobs:
         run: |
           if [[ -n "${{ inputs.reactant_commit }}" ]]; then
               echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
-              sed 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
+              sed -i 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
           fi
       - name: Generate list of platforms
         id: gen-platforms
@@ -182,7 +182,7 @@ jobs:
         run: |
           if [[ -n "${{ inputs.reactant_commit }}" ]]; then
               echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
-              sed 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
+              sed -i 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
           fi
       - name: Build Reactant
         run: |
@@ -229,7 +229,7 @@ jobs:
         run: |
           if [[ -n "${{ inputs.reactant_commit }}" ]]; then
               echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
-              sed 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
+              sed -i 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
           fi
       - name: Check
         run: |
