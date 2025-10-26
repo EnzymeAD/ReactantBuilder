@@ -30,7 +30,7 @@ dependencies = Dependency[dep for dep in merged["dependencies"] if !(isa(dep, Bu
 lazy_artifacts = merged["lazy_artifacts"]
 augment_platform_block = merged["augment_platform_block"]
 build_version = BinaryBuilder.get_next_wrapper_version(name, version)
-repo = "JuliaBinaryWrappers/$(name)_jll.jl"
+repo = "EnzymeAD/$(name)_jll.jl"
 code_dir = joinpath(Pkg.devdir(), "$(name)_jll")
 julia_compat = merged["julia_compat"]
 
@@ -52,17 +52,6 @@ function mvdir(src, dest)
     for file in readdir(src)
         mv(joinpath(src, file), joinpath(dest, file))
     end
-end
-
-function download_cached_binaries(download_dir)
-    NAME = ENV["NAME"]
-    PROJECT = ENV["PROJECT"]
-    artifacts = "$(PROJECT)/products/$(NAME)*.tar.*"
-    cmd = `buildkite-agent artifact download $artifacts $download_dir`
-    if !success(pipeline(cmd; stderr))
-        error("Download failed")
-    end
-    mvdir(joinpath(download_dir, PROJECT, "products"), download_dir)
 end
 
 function download_binaries_from_release(download_dir)
@@ -96,42 +85,40 @@ for json_obj in [merged, objs_unmerged...]
     json_obj["dependencies"] = Dependency[dep for dep in json_obj["dependencies"] if BinaryBuilderBase.is_runtime_dependency(dep)]
 end
 skip_build = get(ENV, "SKIP_BUILD", "false") == "true"
-mktempdir() do download_dir
-    # Grab the binaries for our package
-    if skip_build
-        # We only want to update the wrappers, so download the tarballs from the
-        # latest build.
-        download_binaries_from_release(download_dir)
-    else
-        # We are going to publish the new binaries we've just baked, take them
-        # out of the cache while they're hot.
-        download_cached_binaries(download_dir)
-    end
 
-    # Push up the JLL package (pointing to as-of-yet missing tarballs)
-    tag = "$(name)-v$(build_version)"
-    upload_prefix = "https://github.com/$(repo)/releases/download/$(tag)"
+# binaries will be automatically placed in the `products/` subdir by the GitHub
+# Actions workflow.
+download_dir = joinpath(pwd(), "products")
+# Grab the binaries for our package
+if skip_build
+    # We only want to update the wrappers, so download the tarballs from the
+    # latest build.
+    download_binaries_from_release(download_dir)
+end
 
-    # If we didn't rebuild the tarballs, save the original Artifacts.toml
-    artifacts_toml = skip_build ? read(joinpath(code_dir, "Artifacts.toml"), String) : ""
-    # This loop over the unmerged objects necessary in the event that we have multiple packages being built by a single build_tarballs.jl
-    for (i,json_obj) in enumerate(objs_unmerged)
-        from_scratch = (i == 1)
-        BinaryBuilder.rebuild_jll_package(json_obj; download_dir, upload_prefix, verbose, from_scratch)
-    end
+# Push up the JLL package (pointing to as-of-yet missing tarballs)
+tag = "$(name)-v$(build_version)"
+upload_prefix = "https://github.com/$(repo)/releases/download/$(tag)"
 
-    # Restore Artifacts.toml
-    if skip_build
-        write(joinpath(code_dir, "Artifacts.toml"), artifacts_toml)
-    end
+# If we didn't rebuild the tarballs, save the original Artifacts.toml
+artifacts_toml = skip_build ? read(joinpath(code_dir, "Artifacts.toml"), String) : ""
+# This loop over the unmerged objects necessary in the event that we have multiple packages being built by a single build_tarballs.jl
+for (i,json_obj) in enumerate(objs_unmerged)
+    from_scratch = (i == 1)
+    BinaryBuilder.rebuild_jll_package(json_obj; download_dir, upload_prefix, verbose, from_scratch)
+end
 
-    # Push JLL package _before_ uploading to GitHub releases, so that this version of the code is what gets tagged
-    BinaryBuilder.push_jll_package(name, build_version)
+# Restore Artifacts.toml
+if skip_build
+    write(joinpath(code_dir, "Artifacts.toml"), artifacts_toml)
+end
 
-    if !skip_build
-        # Upload the tarballs to GitHub releases
-        BinaryBuilder.upload_to_github_releases(repo, tag, download_dir; verbose=verbose)
-    end
+# Push JLL package _before_ uploading to GitHub releases, so that this version of the code is what gets tagged
+BinaryBuilder.push_jll_package(name, build_version)
+
+if !skip_build
+    # Upload the tarballs to GitHub releases
+    BinaryBuilder.upload_to_github_releases(repo, tag, download_dir; verbose=verbose)
 end
 
 # Sub off to Registrator to create a PR to General.  Note: it's important to pass both
