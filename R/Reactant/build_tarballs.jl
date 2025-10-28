@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "d3cee1ac27e3dd9f90779c84e0a6848a802b6878"
-version = v"0.0.252"
+reactant_commit = "9d0e99d266c712dd0e85b37e87ea358a585f0564"
+version = v"0.0.254"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -222,7 +222,6 @@ if [[ "${target}" == aarch64-* ]]; then
 fi
 
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
-    BAZEL_BUILD_FLAGS+=(--config=cuda)
     BAZEL_BUILD_FLAGS+=(--repo_env=HERMETIC_CUDA_VERSION="${HERMETIC_CUDA_VERSION}")
     if [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     	BAZEL_BUILD_FLAGS+=(--config=cuda13)
@@ -330,6 +329,10 @@ elif [[ "${target}" == *mingw32* ]]; then
 
 
     clang @bazel-bin/libReactantExtra.so-2.params
+elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    cp /workspace/srcdir/libnvvm-linux-x86_64-*/nvvm/bin/cicc /workspace/bazel_root/*/external/cuda_nvvm/nvvm/bin/cicc
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 else
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 fi
@@ -345,10 +348,11 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     find bazel-bin
     find ${libdir}
 
+    # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     if [[ "${target}" == x86_64-linux-gnu ]]; then
         NVCC_DIR=(bazel-bin/libReactantExtra.so.runfiles/cuda_nvcc)
     else
-        NVCC_DIR=(/workspace/srcdir/cuda_nvcc-*-archive)
+        NVCC_DIR=(/workspace/srcdir/cuda_nvcc-linux-sbsa*-archive)
     fi
 
     if [ -f "${NVCC_DIR[@]}/nvvm/libdevice/libdevice.10.bc" ]; then
@@ -469,7 +473,7 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     hermetic_cuda_version_map = Dict(
         # Our platform tags use X.Y version scheme, but for some CUDA versions we need to
         # pass Bazel a full version number X.Y.Z.  See `CUDA_REDIST_JSON_DICT` in
-        # <hhttps://github.com/google-ml-infra/rules_ml_toolchain/blob/main/third_party/gpus/cuda/hermetic/cuda_redist_versions.bzl>.
+        # <https://github.com/google-ml-infra/rules_ml_toolchain/blob/main/third_party/gpus/cuda/hermetic/cuda_redist_versions.bzl>.
         "none" => "none",
         "11.8" => "11.8",
         "12.1" => "12.1.1",
@@ -496,20 +500,18 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
 		  "a511c1cf1ebfe6fe3b8ec005374b9c05e89ac28b3d4eb468873f59800c02b030"))
     end
 
-    if arch(platform) == "aarch64" && gpu == "cuda"		
+    if arch(platform) == "aarch64" && gpu == "cuda"
         if hermetic_cuda_version_map[cuda_version] == "13.0.1"
-            # bazel currentlty tries to run  external/cuda_nvcc/bin/../nvvm/bin/cicc: line 1: ELF
-            # continue
-
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
             push!(platform_sources,
+		  ArchiveSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.0.88-archive.tar.xz",
+				"17ef1665b63670887eeba7d908da5669fa8c66bb73b5b4c1367f49929c086353"),
+		  )
+	    push!(platform_sources,
                   ArchiveSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.0.88-archive.tar.xz",
                                 "01b01e10aa2662ad1b3aeab3317151d7d6d4a650eeade55ded504f6b7fced18e"),
                   )
-		elseif hermetic_cuda_version_map[cuda_version] == "13.0.0"
-            # bazel currentlty tries to run  external/cuda_nvcc/bin/../nvvm/bin/cicc: line 1: ELF
-            # continue
-
+	elseif hermetic_cuda_version_map[cuda_version] == "13.0.0"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
             push!(platform_sources,
                   ArchiveSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.0.48-archive.tar.xz",
@@ -569,8 +571,8 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
         for lib in (
                 "libnccl",
                 # "libcuda",
-				"libnvrtc",
-				"libnvrtc-builtins",
+		"libnvrtc",
+		"libnvrtc-builtins",
                 "libnvshmem_host",
                 "nvshmem_bootstrap_uid",
                 "nvshmem_transport_ibrc"
@@ -615,7 +617,7 @@ for (i,build) in enumerate(builds)
                    name, version, build.sources, build.script,
                    build.platforms, build.products, build.dependencies;
                    preferred_gcc_version=build.preferred_gcc_version, build.preferred_llvm_version, julia_compat="1.10",
-                   compression_format="xz",
+                   # compression_format="xz",
                    # We use GCC 13, so we can't dlopen the library during audit
                    augment_platform_block, lazy_artifacts=true, lock_microarchitecture=false, dont_dlopen=true,
                    # When we're running CI for Enzyme-JAX (i.e. when the commit is
