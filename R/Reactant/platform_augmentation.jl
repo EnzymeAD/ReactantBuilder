@@ -94,7 +94,7 @@ function augment_platform!(platform::Platform)
 
             if cuda_version_tag == "none" && current_cuda_version isa VersionNumber
                 if v"12" <= current_cuda_version < v"13"
-                    cuda_version_tag = "12.8"
+                    cuda_version_tag = "12.9"
                 elseif v"13.0" <= current_cuda_version < v"14"
                     cuda_version_tag = "13.0"
                 else
