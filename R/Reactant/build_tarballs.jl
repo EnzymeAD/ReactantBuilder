@@ -553,6 +553,8 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
         for lib in (
                 "libnccl",
                 # "libcuda",
+				"libnvrtc",
+				"libnvrtc-builtins",
                 "libnvshmem_host",
                 "nvshmem_bootstrap_uid",
                 "nvshmem_transport_ibrc"
