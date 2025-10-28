@@ -419,7 +419,7 @@ augment_platform_block="""
     """
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
-for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "12.8", "13.0"), platform in platforms
+for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.0"), platform in platforms
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -469,7 +469,7 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     hermetic_cuda_version_map = Dict(
         # Our platform tags use X.Y version scheme, but for some CUDA versions we need to
         # pass Bazel a full version number X.Y.Z.  See `CUDA_REDIST_JSON_DICT` in
-        # <https://github.com/openxla/xla/blob/main/third_party/tsl/third_party/gpus/cuda/hermetic/cuda_redist_versions.bzl>.
+        # <hhttps://github.com/google-ml-infra/rules_ml_toolchain/blob/main/third_party/gpus/cuda/hermetic/cuda_redist_versions.bzl>.
         "none" => "none",
         "11.8" => "11.8",
         "12.1" => "12.1.1",
@@ -478,7 +478,8 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
         "12.4" => "12.4.1",
         "12.6" => "12.6.3",
         "12.8" => "12.8.1",
-        "13.0" => "13.0.0"
+        "12.9" => "12.9.1",
+        "13.0" => "13.0.1"
     )
 
     prefix="""
@@ -495,8 +496,17 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
 		  "a511c1cf1ebfe6fe3b8ec005374b9c05e89ac28b3d4eb468873f59800c02b030"))
     end
 
-    if arch(platform) == "aarch64" && gpu == "cuda"
-        if hermetic_cuda_version_map[cuda_version] == "13.0.0"
+    if arch(platform) == "aarch64" && gpu == "cuda"		
+        if hermetic_cuda_version_map[cuda_version] == "13.0.1"
+            # bazel currentlty tries to run  external/cuda_nvcc/bin/../nvvm/bin/cicc: line 1: ELF
+            # continue
+
+            # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
+            push!(platform_sources,
+                  ArchiveSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.0.88-archive.tar.xz",
+                                "01b01e10aa2662ad1b3aeab3317151d7d6d4a650eeade55ded504f6b7fced18e"),
+                  )
+		elseif hermetic_cuda_version_map[cuda_version] == "13.0.0"
             # bazel currentlty tries to run  external/cuda_nvcc/bin/../nvvm/bin/cicc: line 1: ELF
             # continue
 
@@ -504,6 +514,12 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
             push!(platform_sources,
                   ArchiveSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.0.48-archive.tar.xz",
                                 "3146cee5148535cb06ea5727b6cc1b0d97a85838d1d98514dc6a589ca38e1495"),
+                  )
+        elseif hermetic_cuda_version_map[cuda_version] == "12.9.1"
+            # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_12.8.1.json
+            push!(platform_sources,
+                  ArchiveSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-12.9.86-archive.tar.xz",
+                                "0aa1fce92dbae76c059c27eefb9d0ffb58e1291151e44ff7c7f1fc2dd9376c0d"),
                   )
         elseif hermetic_cuda_version_map[cuda_version] == "12.8.1"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_12.8.1.json
