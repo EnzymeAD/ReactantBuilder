@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "9d0e99d266c712dd0e85b37e87ea358a585f0564"
-version = v"0.0.254"
+reactant_commit = "158b9868519639cae4c50e492b25e64ead7deda2"
+version = v"0.0.255"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -334,6 +334,10 @@ elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
     cp /workspace/srcdir/libnvvm-linux-x86_64-*/nvvm/bin/cicc /workspace/bazel_root/*/external/cuda_nvvm/nvvm/bin/cicc
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]; then
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 else
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 fi
@@ -569,15 +573,35 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
     ]
 
     if gpu == "cuda"
-        for lib in (
+	libs = String[
                 "libnccl",
                 # "libcuda",
-		"libnvrtc",
-		"libnvrtc-builtins",
                 "libnvshmem_host",
                 "nvshmem_bootstrap_uid",
                 "nvshmem_transport_ibrc"
-        )
+	]
+	if VersionNumber(cuda_version) >= v"13"
+                append!(libs, String["libcufft",
+                "libcudnn_engines_precompiled",
+                "libcudart",
+                "libcublasLt",
+                "libcudnn_heuristic",
+                "libcudnn_cnn",
+                "libnvrtc",
+                "libcudnn_adv",
+                "libcudnn",
+                "libnvJitLink",
+                "libcublas",
+                "libcudnn_ops",
+                "libnvrtc-builtins",
+                "libcudnn_graph",
+                "libcusolver",
+                "libcudnn_engines_runtime_compiled",
+                "libcusparse",
+		]
+		)
+	end
+        for lib in libs
             san = replace(lib, "-" => "_")
             push!(products,
                   LibraryProduct([lib, lib], Symbol(san);
@@ -618,7 +642,7 @@ for (i,build) in enumerate(builds)
                    name, version, build.sources, build.script,
                    build.platforms, build.products, build.dependencies;
                    preferred_gcc_version=build.preferred_gcc_version, build.preferred_llvm_version, julia_compat="1.10",
-                   # compression_format="xz",
+                   compression_format="xz",
                    # We use GCC 13, so we can't dlopen the library during audit
                    augment_platform_block, lazy_artifacts=true, lock_microarchitecture=false, dont_dlopen=true,
                    # When we're running CI for Enzyme-JAX (i.e. when the commit is
