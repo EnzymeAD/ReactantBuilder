@@ -114,7 +114,7 @@ if skip_build
 end
 
 # Push JLL package _before_ uploading to GitHub releases, so that this version of the code is what gets tagged
-BinaryBuilder.push_jll_package(name, build_version)
+BinaryBuilder.push_jll_package(name, build_version; deploy_repo=repo)
 
 if !skip_build
     # Upload the tarballs to GitHub releases
