@@ -580,23 +580,35 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
                 "nvshmem_bootstrap_uid",
                 "nvshmem_transport_ibrc"
 	]
-	if VersionNumber(cuda_version) >= v"13"
-                append!(libs, String["libcufft",
+	cudnn = true
+	nvrtc = true
+	others = VersionNumber(cuda_version) >= v"13"
+	if cudnn
+        append!(libs, String[
                 "libcudnn_engines_precompiled",
-                "libcudart",
-                "libcublasLt",
                 "libcudnn_heuristic",
                 "libcudnn_cnn",
-                "libnvrtc",
                 "libcudnn_adv",
                 "libcudnn",
-                "libnvJitLink",
-                "libcublas",
                 "libcudnn_ops",
-                "libnvrtc-builtins",
                 "libcudnn_graph",
-                "libcusolver",
                 "libcudnn_engines_runtime_compiled",
+		])
+	end
+	if nvrtc
+        append!(libs, String[
+                "libnvrtc",
+                "libnvJitLink",
+                "libnvrtc-builtins",
+		])
+	end
+	if others
+            append!(libs, String[
+				"libcufft",
+                "libcudart",
+                "libcublasLt",
+                "libcublas",
+                "libcusolver",
                 "libcusparse",
 		]
 		)
