@@ -20,3 +20,4 @@ jobs:
     strategy:
       fail-fast: false
     uses: ./.github/workflows/build-reactant-reusable.yml
+    secrets: inherit

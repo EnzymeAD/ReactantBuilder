@@ -429,6 +429,9 @@ augment_platform_block="""
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
 for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.0"), platform in platforms
+    if !Sys.islinux(platform) || gpu != "none" || mode != "opt"
+        continue
+    end
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
