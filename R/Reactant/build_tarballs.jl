@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "158b9868519639cae4c50e492b25e64ead7deda2"
-version = v"0.0.255"
+reactant_commit = "54f83c1e9f11ba8236776b9de2443d382e9e8a66"
+version = v"0.0.256"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -598,12 +598,12 @@ for gpu in ("none", "cuda"), mode in ("opt", "dbg"), cuda_version in ("none", "1
 	if nvrtc
         append!(libs, String[
                 "libnvrtc",
-                "libnvJitLink",
                 "libnvrtc-builtins",
 		])
 	end
 	if others
             append!(libs, String[
+                "libnvJitLink",
 				"libcufft",
                 "libcudart",
                 "libcublasLt",
