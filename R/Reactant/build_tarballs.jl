@@ -55,7 +55,6 @@ fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     export ROCM_PATH=$WORKSPACE/srcdir
-    apk add zlib-dev
     
     mv $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442
     mv $ROCM_PATH/lib/libhiprtc.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc.so.7.1.25442
