@@ -6,7 +6,7 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "5044837ee066a2c4139918604ce8112ecb053491"
+reactant_commit = "db8e3ef03f4de49070bc8304e11606d5fc61f5de"
 version = v"0.0.257"
 
 sources = [
@@ -54,7 +54,6 @@ if [[ "${target}" == *-apple-darwin* ]]; then
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
-	rm /usr/bin/realpath
     export ROCM_PATH=$WORKSPACE/srcdir
 
     mv $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442
@@ -71,6 +70,14 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
     ln -s $ROCM_PATH/lib/llvm/amdgcn $ROCM_PATH/amdgcn
     mv $ROCM_PATH/bin/hipcc{,.real}
+    mv $ROCM_PATH/lib/llvm/bin/llvm-link{,.real}
+    mv $ROCM_PATH/lib/llvm/bin/opt{,.real}
+    echo "#!/bin/bash" > $ROCM_PATH/lib/llvm/bin/llvm-link
+    echo "#!/bin/bash" > $ROCM_PATH/lib/llvm/bin/opt
+    echo "LD_LIBRARY_PATH=\\\"$LD_LIBRARY_PATH\\\" $ROCM_PATH/lib/llvm/bin/llvm-link.real \$@" >> $ROCM_PATH/lib/llvm/bin/llvm-link
+    echo "LD_LIBRARY_PATH=\\\"$LD_LIBRARY_PATH\\\" $ROCM_PATH/lib/llvm/bin/opt.real \$@" >> $ROCM_PATH/lib/llvm/bin/opt
+    chmod +x $ROCM_PATH/lib/llvm/bin/opt
+    chmod +x $ROCM_PATH/lib/llvm/bin/llvm-link
     cp `which clang` $ROCM_PATH/bin/hipcc
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,PRE_FLAGS+=( -nostdinc++ ),PRE_FLAGS+=( -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include),g" $ROCM_PATH/bin/hipcc
@@ -303,7 +310,7 @@ fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     BAZEL_BUILD_FLAGS+=(--config=rocm)
-
+    rm /usr/bin/realpath
     if [[ "${GCC_MAJOR_VERSION}" -le 12 && "${target}" == x86_64-* ]]; then
         # Someone wants to compile some code which requires flags not understood by GCC 12.
         BAZEL_BUILD_FLAGS+=(--define=xnn_enable_avxvnniint8=false)
