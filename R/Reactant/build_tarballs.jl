@@ -54,6 +54,7 @@ if [[ "${target}" == *-apple-darwin* ]]; then
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
+	rm /usr/bin/realpath
     export ROCM_PATH=$WORKSPACE/srcdir
 
     mv $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442
