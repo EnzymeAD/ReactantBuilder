@@ -74,7 +74,6 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,PRE_FLAGS+=( -nostdinc++ ),PRE_FLAGS+=( -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include),g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc 
-    # apk add coreutils
 fi
 
 # if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
@@ -820,6 +819,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     end
 	if gpu == "rocm"
 		# push!(dependencies, HostBuildDependency(PackageSpec("CMake_jll", v"3.30.2")))
+		push!(dependencies, HostBuildDependency("coreutils_jll"))
 
 		push!(platform_sources, 
 		    FileSource("https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-x86_64.sh",
