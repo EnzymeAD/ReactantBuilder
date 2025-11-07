@@ -222,6 +222,12 @@ jobs:
         with:
           app-id: "${{ secrets.ENZYMEAD_BOT_ID }}"
           private-key: "${{ secrets.ENZYMEAD_BOT_PRIVATE_KEY }}"
+          owner: EnzymeAD
+          repositories: |
+            Reactant_jll.jl
+            HelloWorldC_jll.jl
+            ReactantBuilder
+            General
       - uses: actions/checkout@v5
         with:
           repository: 'EnzymeAD/ReactantBuilder'
