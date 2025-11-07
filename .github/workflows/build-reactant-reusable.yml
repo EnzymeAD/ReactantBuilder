@@ -268,13 +268,13 @@ jobs:
           Pkg.instantiate()
       - name: Generate meta.json
         run: |
-          julia --compile=min ./build_tarballs.jl --meta-json=$(basename ${{ inputs.build_project }}).meta.json
+          julia --color=yes --compile=min ./build_tarballs.jl --meta-json=$(basename ${{ inputs.build_project }}).meta.json
         working-directory: ${{ inputs.build_project }}
         env:
           GITHUB_TOKEN:
       - name: Register
         run: |
-          julia ${JULIA_PROJECT}/register_package.jl "$(basename ${{ inputs.build_project }}).meta.json" --verbose
+          julia --color=yes ${JULIA_PROJECT}/register_package.jl "$(basename ${{ inputs.build_project }}).meta.json" --verbose
         working-directory: ${{ inputs.build_project }}
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
