@@ -278,3 +278,4 @@ jobs:
         working-directory: ${{ inputs.build_project }}
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          JULIA_DEBUG: BinaryBuilder
