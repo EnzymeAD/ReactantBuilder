@@ -22,7 +22,7 @@ on:
         description: 'The project to build'
         required: false
         type: string
-        default: 'R/Reactant'
+        default: 'H/HelloWorldC'
       reactantbuilder_ref:
         description: 'The Git ref of EnzymeAD/ReactantBuilder to check out (leave empty to use the default)'
         required: false
