@@ -1,4 +1,5 @@
-using BinaryBuilder, BinaryBuilderBase, Downloads, Pkg
+using BinaryBuilder, BinaryBuilder.Wizard, BinaryBuilderBase, Downloads, Pkg
+import GitHub: gh_get_json, DEFAULT_API
 
 # FIXME: Golang auto-upgrades to HTTP2, this can cause issue like https://github.com/google/go-github/issues/2113
 ENV["GODEBUG"] = "http2client=0"
@@ -123,4 +124,15 @@ end
 
 # Sub off to Registrator to create a PR to General.  Note: it's important to pass both
 # `augment_platform_block` and `lazy_artifacts` to build the right Project dictionary
-BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat; augment_platform_block, lazy_artifacts)
+gh_auth = Wizard.github_auth(;allow_anonymous=false)
+gh_username = "enzymead-bot[bot]"
+registry_url = "https://github.com/JuliaRegistries/General"
+registry_fork_url = "https://$(gh_username):$(gh_auth.token)@github.com/EnzymeAD/General"
+BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat;
+                           augment_platform_block,
+                           lazy_artifacts,
+                           gh_auth,
+                           gh_username,
+                           registry_url,
+                           registry_fork_url,
+                           )
