@@ -284,6 +284,7 @@ jobs:
         working-directory: ${{ inputs.build_project }}
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          JLBUILD_GITHUB_TOKEN: ${{ secrets.JLBUILD_GITHUB_TOKEN }}
           JULIA_DEBUG: BinaryBuilder
       - name: Save Julia depot cache on cancel or failure
         id: julia-cache-save

@@ -1,5 +1,5 @@
 using BinaryBuilder, BinaryBuilder.Wizard, BinaryBuilderBase, Downloads, Pkg
-import GitHub: gh_get_json, DEFAULT_API
+using GitHub: authenticate, gh_get_json, DEFAULT_API
 
 # FIXME: Golang auto-upgrades to HTTP2, this can cause issue like https://github.com/google/go-github/issues/2113
 ENV["GODEBUG"] = "http2client=0"
@@ -128,6 +128,7 @@ gh_auth = Wizard.github_auth(;allow_anonymous=false)
 gh_username = "enzymead-bot[bot]"
 registry_url = "https://github.com/JuliaRegistries/General"
 registry_fork_url = "https://$(gh_username):$(gh_auth.token)@github.com/EnzymeAD/General"
+gh_auth_pr = authenticate(ENV["JLBUILD_GITHUB_TOKEN"])
 BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat;
                            augment_platform_block,
                            lazy_artifacts,
@@ -135,4 +136,5 @@ BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat;
                            gh_username,
                            registry_url,
                            registry_fork_url,
+                           gh_auth_pr,
                            )
