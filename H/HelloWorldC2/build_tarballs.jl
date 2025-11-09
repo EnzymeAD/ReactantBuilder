@@ -28,7 +28,6 @@ platforms = supported_platforms(; exclude=p->arch(p)=="riscv64")[1:2]
 # The products that we will ensure are always built
 products = [
     ExecutableProduct("hello_world", :hello_world),
-
     # This ExecutableProduct is used in tests that change one of the paths
     ExecutableProduct("hello_world", :hello_world_doppelganger),
 ]
