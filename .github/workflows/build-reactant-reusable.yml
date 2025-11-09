@@ -226,6 +226,7 @@ jobs:
           repositories: |
             Reactant_jll.jl
             HelloWorldC_jll.jl
+            HelloWorldC2_jll.jl
             ReactantBuilder
             General
       - uses: actions/checkout@v5
