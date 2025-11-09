@@ -130,6 +130,7 @@ registry_url = "https://github.com/JuliaRegistries/General"
 registry_fork_url = "https://$(gh_username):$(gh_auth.token)@github.com/EnzymeAD/General"
 gh_auth_pr = authenticate(ENV["JLBUILD_GITHUB_TOKEN"])
 BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat;
+                           deploy_repo=repo,
                            augment_platform_block,
                            lazy_artifacts,
                            gh_auth,
