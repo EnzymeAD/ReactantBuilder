@@ -66,7 +66,7 @@ jobs:
           if [[ -f ./clean_products.sh ]]; then
               sudo ./clean_products.sh
           fi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
@@ -162,7 +162,7 @@ jobs:
           if [[ -f ./clean_products.sh ]]; then
               sudo ./clean_products.sh
           fi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
@@ -212,7 +212,7 @@ jobs:
     needs: build-platforms
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
