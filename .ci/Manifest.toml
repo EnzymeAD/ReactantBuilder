@@ -2,7 +2,6 @@
 
 julia_version = "1.7.3"
 manifest_format = "2.0"
-project_hash = "eb281049837da2b091ec667863c8824a57a70708"
 
 [[deps.ArgParse]]
 deps = ["Logging", "TextWrap"]
@@ -46,7 +45,7 @@ version = "0.6.5"
 
 [[deps.BinaryBuilderBase]]
 deps = ["Bzip2_jll", "CodecZlib", "Downloads", "Gzip_jll", "HistoricalStdlibVersions", "InteractiveUtils", "JLLWrappers", "JSON", "LibGit2", "LibGit2_jll", "Libdl", "Logging", "OrderedCollections", "OutputCollectors", "Pkg", "Printf", "ProgressMeter", "REPL", "Random", "SHA", "Scratch", "SimpleBufferStream", "TOML", "Tar", "Tar_jll", "UUIDs", "XZ_jll", "Zstd_jll", "p7zip_jll", "pigz_jll", "unzip_jll"]
-git-tree-sha1 = "65d5431912c435f0f70e699e1af6f8f3f352fac1"
+git-tree-sha1 = "b0d610852483382d19de2d2db7df8c214aab3fd1"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaPackaging/BinaryBuilderBase.jl.git"
 uuid = "7f725544-6523-48cd-82d1-3fa08ff4056e"
@@ -141,9 +140,9 @@ version = "0.4.4"
 
 [[deps.GitHub]]
 deps = ["Base64", "Dates", "HTTP", "JSON", "MbedTLS", "Sockets", "SodiumSeal", "URIs"]
-git-tree-sha1 = "2501485472c50b24874cc949f0fce9bd3c4a1738"
+git-tree-sha1 = "12d0b1886e60c9d2a3d42ef1612bdfbedec68b42"
 uuid = "bc5e4493-9b4d-5f90-b8aa-2b2bcaad7a26"
-version = "5.10.0"
+version = "5.11.0"
 
 [[deps.Gzip_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -417,9 +416,9 @@ version = "1.10.0"
 
 [[deps.RegistryTools]]
 deps = ["LibGit2", "Pkg", "SHA", "UUIDs"]
-git-tree-sha1 = "c0ac28884fab9ae94ed8cf3448aa950afc2ff9c1"
+git-tree-sha1 = "3087a02cf7baffe55fc5d26573bfd9ab8833c613"
 uuid = "d1eb7eb1-105f-429d-abf5-b0f65cb9e2c4"
-version = "2.3.0"
+version = "2.4.1"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
