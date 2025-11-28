@@ -211,8 +211,8 @@ jobs:
   register:
     name: Register
     runs-on: 'ubuntu-latest'
-    # We don't register the package when we're running CI for Enzyme-JAX.
-    if: ${{ inputs.enzyme_jax_commit == '' }}
+    # We only register on commits on `main` in the `EnzymeAD/ReactantBuilder` repo.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'EnzymeAD/ReactantBuilder' }}
 
     needs: build-platforms
 
@@ -225,8 +225,6 @@ jobs:
           owner: EnzymeAD
           repositories: |
             Reactant_jll.jl
-            HelloWorldC_jll.jl
-            HelloWorldC2_jll.jl
             ReactantBuilder
             General
       - uses: actions/checkout@v6
