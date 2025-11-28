@@ -1,7 +1,7 @@
 using BinaryBuilder
 
-name = "HelloWorldC"
-version = v"1.4.1"
+name = "HelloWorldC2"
+version = v"1.0.0"
 
 # No sources, we're just building the testsuite
 sources = [
@@ -23,12 +23,11 @@ install_license /usr/share/licenses/MIT
 
 # These are the platforms we will build for by default, unless further
 # platforms are passed in on the command line
-platforms = supported_platforms(; exclude=p->arch(p)=="riscv64")
+platforms = supported_platforms(; exclude=p->arch(p)=="riscv64")[1:2]
 
 # The products that we will ensure are always built
 products = [
     ExecutableProduct("hello_world", :hello_world),
-
     # This ExecutableProduct is used in tests that change one of the paths
     ExecutableProduct("hello_world", :hello_world_doppelganger),
 ]

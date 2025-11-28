@@ -2,6 +2,11 @@ name: "Build Reactant_jll"
 
 on:
   workflow_call:
+    secrets:
+      ENZYMEAD_BOT_ID:
+        required: true
+      ENZYMEAD_BOT_PRIVATE_KEY:
+        required: true
     inputs:
       julia_version:
         description: 'Julia version'
@@ -206,16 +211,40 @@ jobs:
   register:
     name: Register
     runs-on: 'ubuntu-latest'
-    # We don't register the package when we're running CI for Enzyme-JAX.
-    if: ${{ inputs.enzyme_jax_commit == '' }}
+    # We only register on commits on `main` in the `EnzymeAD/ReactantBuilder` repo.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'EnzymeAD/ReactantBuilder' }}
 
     needs: build-platforms
 
     steps:
+      - uses: actions/create-github-app-token@v2
+        id: generate_token
+        with:
+          app-id: "${{ secrets.ENZYMEAD_BOT_ID }}"
+          private-key: "${{ secrets.ENZYMEAD_BOT_PRIVATE_KEY }}"
+          owner: EnzymeAD
+          repositories: |
+            Reactant_jll.jl
+            ReactantBuilder
+            General
       - uses: actions/checkout@v6
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
+      - name: Set JULIA_PROJECT
+        # We have to use `${GITHUB_WORKSPACE}` instead of `github.workspace` because GitHub
+        # is terrible and the two don't match inside containers:
+        # https://github.com/actions/runner/issues/2058
+        run:
+          echo "JULIA_PROJECT=${GITHUB_WORKSPACE}/.ci" >> "${GITHUB_ENV}"
+      - name: Set and create PRODUCTS_DIR
+        # We have to use `${GITHUB_WORKSPACE}` instead of `github.workspace` because GitHub
+        # is terrible and the two don't match inside containers:
+        # https://github.com/actions/runner/issues/2058
+        run: |
+          PRODUCTS_DIR=${{ inputs.build_project }}/products
+          mkdir -p "${PRODUCTS_DIR}"
+          echo "PRODUCTS_DIR=${PRODUCTS_DIR}" >> "${GITHUB_ENV}"
       - uses: julia-actions/setup-julia@v2
         with:
           version: '${{ inputs.julia_version }}'
@@ -225,13 +254,41 @@ jobs:
       - uses: actions/download-artifact@v6
         with:
           merge-multiple: true
+          path: ${{ env.PRODUCTS_DIR }}
       - name: Change Reactant commit
         run: |
           if [[ -n "${{ inputs.reactant_commit }}" ]]; then
               echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
               sed -i 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
           fi
-      - name: Check
+      - name: Set up git
         run: |
-          pwd
-          ls -lhrt
+          git config --global user.name "enzymead-bot[bot]"
+          git config --global user.email "238314553+enzymead-bot[bot]@users.noreply.github.com"
+      - name: Instantiate environment
+        timeout-minutes: 20
+        shell: julia --color=yes {0}
+        run: |
+          using Pkg
+          Pkg.instantiate()
+      - name: Generate meta.json
+        run: |
+          julia --color=yes --compile=min ./build_tarballs.jl --meta-json=$(basename ${{ inputs.build_project }}).meta.json
+        working-directory: ${{ inputs.build_project }}
+        env:
+          GITHUB_TOKEN:
+      - name: Register
+        run: |
+          julia --color=yes ${JULIA_PROJECT}/register_package.jl "$(basename ${{ inputs.build_project }}).meta.json" --verbose
+        working-directory: ${{ inputs.build_project }}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          JLBUILD_GITHUB_TOKEN: ${{ secrets.JLBUILD_GITHUB_TOKEN }}
+      - name: Save Julia depot cache on cancel or failure
+        id: julia-cache-save
+        if: cancelled() || failure()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ steps.julia-cache.outputs.cache-paths }}
+          key: ${{ steps.julia-cache.outputs.cache-key }}
