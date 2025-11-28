@@ -1,0 +1,46 @@
+name: "Cleanup local depots"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 5 4 3 * *
+
+jobs:
+  cleanup:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        matchine:
+          - jll1
+          - jll2
+          - jll3
+          - jll4
+          - jll5
+          - jll6
+          - jll7
+          - jll8
+          - jll9
+          - jll10
+    runs-on: ${{ matrix.machine }}
+    steps:
+      - name: "Show disk usage before"
+        run: |
+          df -H "${HOME}"
+      - name: "Set Julia depot path and clean up artifacts"
+        run: |
+          # Set a different depot path for each runner, to avoid clashes
+          JULIA_DEPOT_PATH="${HOME}/.jll-julia-depot/${{ runner.name }}"
+          echo "JULIA_DEPOT_PATH=${JULIA_DEPOT_PATH}:" >> "${GITHUB_ENV}"
+          # Make sure the depot exists
+          mkdir -pv "${JULIA_DEPOT_PATH}"
+
+          # Now remove the artifacts
+          rm -rf "${JULIA_DEPOT_PATH}/artifacts"
+      - uses: julia-actions/setup-julia@v2
+      - name: "Cleanup the depot a little bit more"
+        run: |
+          julia -e 'using Pkg; Pkg.gc()'
+      - name: "Show disk usage after"
+        run: |
+          df -H "${HOME}"
