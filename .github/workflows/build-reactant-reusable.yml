@@ -265,7 +265,7 @@ jobs:
           fi
       - name: Set up git
         run: |
-          git config --global user.name "$enzymead-bot[bot]"
+          git config --global user.name "enzymead-bot[bot]"
           git config --global user.email "238314553+enzymead-bot[bot]@users.noreply.github.com"
       - name: Instantiate environment
         timeout-minutes: 20
