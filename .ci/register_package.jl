@@ -125,11 +125,11 @@ end
 # Sub off to Registrator to create a PR to General.  Note: it's important to pass both
 # `augment_platform_block` and `lazy_artifacts` to build the right Project dictionary
 gh_auth = Wizard.github_auth(;allow_anonymous=false)
+gh_auth_pr = authenticate(ENV["JLBUILD_GITHUB_TOKEN"])
 gh_username = "enzymead-bot[bot]"
 registry_url = "https://github.com/JuliaRegistries/General"
 registry_fork_org = "JuliaRegistries"
-registry_fork_url = "https://$(gh_username):$(gh_auth.token)@github.com/JuliaRegistries/General"
-gh_auth_pr = authenticate(ENV["JLBUILD_GITHUB_TOKEN"])
+registry_fork_url = "https://jlbuild:$(gh_auth_pr.token)@github.com/JuliaRegistries/General"
 BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat;
                            deploy_repo=repo,
                            augment_platform_block,
