@@ -127,8 +127,8 @@ end
 gh_auth = Wizard.github_auth(;allow_anonymous=false)
 gh_username = "enzymead-bot[bot]"
 registry_url = "https://github.com/JuliaRegistries/General"
-registry_fork_org = "EnzymeAD"
-registry_fork_url = "https://$(gh_username):$(gh_auth.token)@github.com/EnzymeAD/General"
+registry_fork_org = "JuliaRegistries"
+registry_fork_url = "https://$(gh_username):$(gh_auth.token)@github.com/JuliaRegistries/General"
 gh_auth_pr = authenticate(ENV["JLBUILD_GITHUB_TOKEN"])
 BinaryBuilder.register_jll(name, build_version, dependencies, julia_compat;
                            deploy_repo=repo,
