@@ -12,7 +12,7 @@ on:
         description: 'Julia version'
         required: false
         type: string
-        default: '1.7.3'
+        default: '1.12.4'
       os:
         description: 'OS/Runner'
         required: false
