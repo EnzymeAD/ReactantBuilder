@@ -50,6 +50,7 @@ jobs:
   define-matrix:
     name: Define matrix
     runs-on: 'ubuntu-latest'
+    timeout-minutes: 30
 
     outputs:
       platforms: ${{ steps.gen-platforms.outputs.platforms }}
@@ -128,6 +129,7 @@ jobs:
   build-platforms:
     name: Build ${{ matrix.platform }}
     runs-on: ${{ inputs.os }}
+    timeout-minutes: 150
 
     needs: define-matrix
     strategy:
@@ -190,6 +192,7 @@ jobs:
               sed -i 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
           fi
       - name: Build Reactant
+        timeout-minutes: 120
         run: |
           julia --color=yes --threads=16 build_tarballs.jl --verbose ${{ matrix.platform }}
         working-directory: ${{ inputs.build_project }}
@@ -211,6 +214,7 @@ jobs:
   register:
     name: Register
     runs-on: 'ubuntu-latest'
+    timeout-minutes: 60
     # We only register on commits on `main` in the `EnzymeAD/ReactantBuilder` repo.
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'EnzymeAD/ReactantBuilder' }}
 
