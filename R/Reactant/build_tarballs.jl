@@ -405,7 +405,7 @@ elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]
     cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 else
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libRaise.so
 fi
 
 rm -f bazel-bin/libReactantExtraLib*
@@ -604,7 +604,8 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 fi
 
 
-install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
+install -Dvm 755 bazel-bin/libRaise.so "${libdir}/libRaise.${dlext}"
+# install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
 install_license ../../LICENSE
 """
 
@@ -701,6 +702,10 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     preferred_gcc_version = v"13"
     preferred_llvm_version = v"18.1.7"
+    
+    if gpu != "none"
+	    continue
+    end
 
     # Disable debug builds for cuda
     if mode == "dbg"
@@ -866,7 +871,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     # The products that we will ensure are always built
     products = Product[
-        LibraryProduct(["libReactantExtra", "libReactantExtra"], :libReactantExtra)
+        # LibraryProduct(["libReactantExtra", "libReactantExtra"], :libReactantExtra)
+        LibraryProduct(["libRaise", "libRaise"], :libRaise)
     ]
 
     if gpu == "cuda"
