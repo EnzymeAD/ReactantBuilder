@@ -405,7 +405,7 @@ elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]
     cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 else
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libRaise.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} @enzyme_ad//:libRaise.so
 fi
 
 rm -f bazel-bin/libReactantExtraLib*
@@ -604,7 +604,8 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 fi
 
 
-install -Dvm 755 bazel-bin/libRaise.so "${libdir}/libRaise.${dlext}"
+find bazel-bin -iname libRaise.so
+install -Dvm 755 bazel-bin/external/enzyme_ad/libRaise.so "${libdir}/libRaise.${dlext}"
 # install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
 install_license ../../LICENSE
 """
