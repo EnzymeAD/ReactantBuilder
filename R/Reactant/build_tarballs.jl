@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "d635c44c62154243eadf038868d730c72d3b4031"
+reactant_commit = "c7d2d6a9987327a25ac345ba3fe2c7cde8d4ba72"
 version = v"0.0.267"
 
 sources = [
@@ -405,7 +405,7 @@ elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]
     cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 else
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} @enzyme_ad//:libRaise.so
 fi
 
 rm -f bazel-bin/libReactantExtraLib*
@@ -604,7 +604,9 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 fi
 
 
-install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
+find bazel-bin -iname libRaise.so
+install -Dvm 755 bazel-bin/external/enzyme_ad/libRaise.so "${libdir}/libRaise.${dlext}"
+# install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
 install_license ../../LICENSE
 """
 
@@ -701,13 +703,18 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     preferred_gcc_version = v"13"
     preferred_llvm_version = v"18.1.7"
+    
+    if gpu != "none"
+	    continue
+    end
 
+	if Sys.isapple(platform)
+		continue
+	end
+	
     # Disable debug builds for cuda
     if mode == "dbg"
         if gpu != "none"
-            continue
-        end
-        if !Sys.isapple(platform)
             continue
         end
     end
@@ -727,7 +734,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         continue
     end
 
-    if gpu == "rocm" && arch(platform) == "aarch64"
+    if arch(platform) == "aarch64"
         # At the moment we can't build for ROCM on aarch64, let's skip it
         continue
     end
@@ -866,7 +873,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     # The products that we will ensure are always built
     products = Product[
-        LibraryProduct(["libReactantExtra", "libReactantExtra"], :libReactantExtra)
+        # LibraryProduct(["libReactantExtra", "libReactantExtra"], :libReactantExtra)
+        LibraryProduct(["libRaise", "libRaise"], :libRaise)
     ]
 
     if gpu == "cuda"
