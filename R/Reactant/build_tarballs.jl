@@ -708,12 +708,13 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 	    continue
     end
 
+	if Sys.isapple(platform)
+		continue
+	end
+	
     # Disable debug builds for cuda
     if mode == "dbg"
         if gpu != "none"
-            continue
-        end
-        if !Sys.isapple(platform)
             continue
         end
     end
@@ -733,7 +734,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         continue
     end
 
-    if gpu == "rocm" && arch(platform) == "aarch64"
+    if arch(platform) == "aarch64"
         # At the moment we can't build for ROCM on aarch64, let's skip it
         continue
     end
