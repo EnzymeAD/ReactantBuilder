@@ -211,14 +211,25 @@ jobs:
           sudo ./clean_builds.sh
           sudo ./clean_products.sh
 
+  # Dummy job that we can use as single job to identify successful builds, for
+  # example to mark required jobs in CI settings
+  all-builds-successful:
+    name: Successful builds
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 5
+    needs: build-platforms
+    steps:
+      - name: Success
+        run: |
+          echo 'Success'
+
   register:
     name: Register
     runs-on: 'ubuntu-latest'
     timeout-minutes: 60
     # We only register on commits on `main` in the `EnzymeAD/ReactantBuilder` repo.
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'EnzymeAD/ReactantBuilder' }}
-
-    needs: build-platforms
+    needs: all-builds-successful
 
     steps:
       - uses: actions/create-github-app-token@v2
