@@ -371,8 +371,6 @@ if [[ "${target}" == *-darwin* ]]; then
     cc @bazel-bin/libReactantExtra.so-2.params
 elif [[ "${target}" == *mingw32* ]]; then
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
-    sed -i.bak1 -e "s/PTHREADPOOL_WEAK//g" /workspace/bazel_root/*/external/pthreadpool/src/portable-api.c
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage2
     sed -i.bak1 -e "/start-lib/d" \
                 -e "/end-lib/d" \
                 bazel-bin/libReactantExtra.so-2.params
