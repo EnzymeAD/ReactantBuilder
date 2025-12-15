@@ -198,7 +198,7 @@ jobs:
         working-directory: ${{ inputs.build_project }}
         env:
           ENZYME_JAX_COMMIT: ${{ inputs.enzyme_jax_commit }}
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: products-${{ matrix.platform }}
           path: ${{ inputs.build_project }}/products
