@@ -53,6 +53,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     cd -
 
     export ROCM_PATH=$WORKSPACE/srcdir
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$ROCM_PATH/lib"
 
     mv $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442
     rm $ROCM_PATH/lib/libhiprtc-builtins.so.7
