@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "a90ac9e53e6ade2a902d18437999128816b195eb"
-version = v"0.0.290"
+reactant_commit = "f0fc6898304fb074cee9f7d6775a669a9fa0f49a"
+version = v"0.0.291"
 
 sources = [
    GitSource(repo, reactant_commit),
