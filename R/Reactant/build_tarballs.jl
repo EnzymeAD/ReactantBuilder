@@ -707,9 +707,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         if gpu != "none"
             continue
         end
-        if !Sys.isapple(platform)
-            continue
-        end
     end
 
     # If you skip GPU builds here, remember to update also platform augmentation above.
