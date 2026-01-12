@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "d96f75e2feb14c2025dcda3f0be3111e5dc6c0c7"
-version = v"0.0.300"
+reactant_commit = "dc06c10420abaf570223e145d44259b8b8390de0"
+version = v"0.0.301"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -74,9 +74,11 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     echo "LD_LIBRARY_PATH=\\\"$LD_LIBRARY_PATH\\\" $ROCM_PATH/lib/llvm/bin/opt.real \$@" >> $ROCM_PATH/lib/llvm/bin/opt
     chmod +x $ROCM_PATH/lib/llvm/bin/opt
     chmod +x $ROCM_PATH/lib/llvm/bin/llvm-link
+    sed -i -e "s,vrun ,PRE_FLAGS+=( -L$ROCM_PATH/lib ); vrun ,g" `which clang`
+    sed -i -e "s,vrun ,PRE_FLAGS+=( -L$ROCM_PATH/lib ); vrun ,g" `which clang++`
     cp `which clang` $ROCM_PATH/bin/hipcc
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
-    sed -i -e "s,PRE_FLAGS+=( -nostdinc++ ),PRE_FLAGS+=( -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include),g" $ROCM_PATH/bin/hipcc
+    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
