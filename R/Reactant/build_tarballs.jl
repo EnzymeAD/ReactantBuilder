@@ -709,9 +709,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         if gpu != "none"
             continue
         end
-		if Sys.iswindows(platform)
-            continue
-        end
 		if !Sys.isapple(platform) && arch(platform) == "aarch64"
             continue
         end
