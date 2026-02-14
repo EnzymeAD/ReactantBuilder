@@ -851,12 +851,12 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
 	      if rocm_version == "6.4"
 	       push!(platform_sources,
-                    FileSource("https://github.com/ROCm/TheRock/releases/download/nightly-tarball/therock-dist-linux-gfx94X-dcgpu-6.4.0rc20250520.tar.gz",
+                    FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.4.0rc20250520.tar.gz",
 				"b3d64777a79f33e8d1b50230f26ac769bd77d5bc11bd850ec111933c842914e9")
                   )
 	       elseif rocm_version == "6.5"
 	       push!(platform_sources,
-                  FileSource("https://github.com/ROCm/TheRock/releases/download/nightly-tarball/therock-dist-linux-gfx94X-dcgpu-6.5.0rc20250610.tar.gz",
+                  FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.5.0rc20250610.tar.gz",
 				"113e44dcd7868ffab92193bbcb8653a374494f0c5b393545f08551ea835a1ee5")
                   )
 	       elseif rocm_version == "7.1"
