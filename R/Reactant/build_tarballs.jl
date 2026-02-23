@@ -440,7 +440,11 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
     patchelf --set-rpath '$ORIGIN' bazel-bin/libReactantExtra.so
-
+else
+  if nm -D  bazel-bin/libReactantExtra.so | grep -qw ncclSend; then
+    echo "Error: Forbidden reference to ncclSend found in library." >&2
+    exit 1
+  fi
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
