@@ -490,6 +490,10 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         -t ${libdir}
     
     install -Dvm 755 \
+        $ROCM_PATH/lib/libhsa-amd-aqlprofile64.so* \
+        -t ${libdir}
+    
+    install -Dvm 755 \
         $ROCM_PATH/lib/librccl.so* \
         -t ${libdir}
     
