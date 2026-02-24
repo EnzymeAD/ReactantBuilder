@@ -486,6 +486,14 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         -t ${libdir}/rocm_sysdeps/lib
     
     install -Dvm 755 \
+        $ROCM_PATH/lib/libMIOpen.so* \
+        -t ${libdir}
+    
+    install -Dvm 755 \
+        $ROCM_PATH/lib/libhsa-amd-aqlprofile64.so* \
+        -t ${libdir}
+    
+    install -Dvm 755 \
         $ROCM_PATH/lib/librccl.so* \
         -t ${libdir}
     
