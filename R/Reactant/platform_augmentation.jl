@@ -150,7 +150,7 @@ function augment_platform!(platform::Platform)
             Libdl.find_library(["libcuda.so.1", "libcuda.so"])
         end
 
-	should_add_cuda_dependency = false
+	should_add_cuda_dependency = nothing
 	no_cuda_devices = false
 
         # if we've found a system driver, put a dependency on it,
@@ -158,14 +158,14 @@ function augment_platform!(platform::Platform)
         if cuname != "" && gpu == "undecided"
             handle = Libdl.dlopen(cuname)
             current_cuda_version = cuDriverGetVersion(handle)
-	    device_count = cuDeviceGetCount(handle)
-	    path = Libdl.dlpath(handle)
+	        device_count = cuDeviceGetCount(handle)
+	        path = Libdl.dlpath(handle)
             Libdl.dlclose(handle)
 
             if gpu_version_tag == "none" && current_cuda_version isa VersionNumber
-		if device_count == nothing || device_count == 0
-		   no_cuda_devices = true
-		end
+		        if device_count == nothing || device_count == 0
+		            no_cuda_devices = true
+		        end
                 if v"12" <= current_cuda_version < v"13"
                     gpu_version_tag = "12.9"
                 elseif v"13.0" <= current_cuda_version < v"14"
@@ -176,7 +176,7 @@ function augment_platform!(platform::Platform)
             end
 
             if gpu_version_tag != "none"
-		should_add_cuda_dependency = path
+		        should_add_cuda_dependency = path
                 gpu = "cuda"
             end
         end
@@ -193,11 +193,12 @@ function augment_platform!(platform::Platform)
             #@debug "Adding include dependency on $(path)"
             #Base.include_dependency(path)
             gpu = "rocm"
+			should_add_cuda_dependency = nothing
         end
 
 	if should_add_cuda_dependency != nothing
-                @debug "Adding include dependency on $(should_add_cuda_dependency)"
-                Base.include_dependency(should_add_cuda_dependency)
+        @debug "Adding include dependency on $(should_add_cuda_dependency)"
+        Base.include_dependency(should_add_cuda_dependency)
 	end
 
     end
