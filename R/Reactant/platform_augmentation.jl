@@ -61,7 +61,25 @@ function cuDriverGetVersion(library_handle)
     return version
 end
 
+function cuInit(library_handle)
+    function_handle = Libdl.dlsym(library_handle, "cuInit"; throw_error=false)
+    if function_handle === nothing
+        @debug "CUDA Driver library seems invalid (does not contain 'cuInit')"
+        return nothing
+    end
+    status = ccall(function_handle, Cint, (Cuint,), 0)
+    if status != 0
+        @debug "Call to 'cuInit' failed with status $(status)"
+        return nothing
+    end
+    return 0
+end
+
 function cuDeviceGetCount(library_handle)
+    status = cuInit(library_handle)
+    if status == nothing
+	return nothing
+    end
     function_handle = Libdl.dlsym(library_handle, "cuDeviceGetCount"; throw_error=false)
     if function_handle === nothing
         @debug "CUDA Driver library seems invalid (does not contain 'cuDeviceGetCount')"
@@ -76,7 +94,6 @@ function cuDeviceGetCount(library_handle)
     version = version_ref[]
     @debug "Detected $(version) CUDA devices"
     return version
-
 end
 
 function amdDriverInitialized()::Bool
@@ -90,12 +107,17 @@ function amdDriverInitialized()::Bool
             # Case 1: The driver is a loadable module.
             # We need to read its state to see if it's 'live'.
             # The `open...do` block ensures the file is closed automatically.
-            return open(initstate_path) do file
+            found = open(initstate_path) do file
                 contains(read(file, String), "live")
             end
+	    if found
+    		@debug "Detected AMD live driver"
+	    end
+	    return true
         else
             # Case 2: The directory exists but `initstate` does not.
             # This implies the driver is built into the kernel and is active.
+    	    @debug "Detected AMD driver built into kernel"
             return true
         end
     end
@@ -141,7 +163,7 @@ function augment_platform!(platform::Platform)
             Libdl.dlclose(handle)
 
             if gpu_version_tag == "none" && current_cuda_version isa VersionNumber
-		if device_count == 0
+		if device_count == nothing || device_count == 0
 		   no_cuda_devices = true
 		end
                 if v"12" <= current_cuda_version < v"13"
