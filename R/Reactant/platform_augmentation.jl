@@ -61,6 +61,24 @@ function cuDriverGetVersion(library_handle)
     return version
 end
 
+function cuDeviceGetCount(library_handle)
+    function_handle = Libdl.dlsym(library_handle, "cuDeviceGetCount"; throw_error=false)
+    if function_handle === nothing
+        @debug "CUDA Driver library seems invalid (does not contain 'cuDeviceGetCount')"
+        return nothing
+    end
+    version_ref = Ref{Cint}()
+    status = ccall(function_handle, Cint, (Ptr{Cint},), version_ref)
+    if status != 0
+        @debug "Call to 'cuDeviceGetCount' failed with status $(status)"
+        return nothing
+    end
+    version = version_ref[]
+    @debug "Detected $(version) CUDA devices"
+    return version
+
+end
+
 function amdDriverInitialized()::Bool
     amdgpu_module_path = "/sys/module/amdgpu"
 
@@ -110,15 +128,22 @@ function augment_platform!(platform::Platform)
             Libdl.find_library(["libcuda.so.1", "libcuda.so"])
         end
 
+	should_add_cuda_dependency = false
+	no_cuda_devices = false
+
         # if we've found a system driver, put a dependency on it,
         # so that we get recompiled if the driver changes.
         if cuname != "" && gpu == "undecided"
             handle = Libdl.dlopen(cuname)
             current_cuda_version = cuDriverGetVersion(handle)
-            path = Libdl.dlpath(handle)
+	    device_count = cuDeviceGetCount(handle)
+	    path = Libdl.dlpath(handle)
             Libdl.dlclose(handle)
 
             if gpu_version_tag == "none" && current_cuda_version isa VersionNumber
+		if device_count == 0
+		   no_cuda_devices = true
+		end
                 if v"12" <= current_cuda_version < v"13"
                     gpu_version_tag = "12.9"
                 elseif v"13.0" <= current_cuda_version < v"14"
@@ -129,15 +154,14 @@ function augment_platform!(platform::Platform)
             end
 
             if gpu_version_tag != "none"
-                @debug "Adding include dependency on $(path)"
-                Base.include_dependency(path)
+		should_add_cuda_dependency = path
                 gpu = "cuda"
             end
         end
 
         # if we've found a system driver, put a dependency on it,
         # so that we get recompiled if the driver changes.
-	if amdDriverInitialized() && gpu == "undecided"
+	if amdDriverInitialized() && (gpu == "undecided" || no_cuda_devices)
             #roname = ""
             #handle = Libdl.dlopen(roname)
             #path = Libdl.dlpath(handle)
@@ -148,6 +172,11 @@ function augment_platform!(platform::Platform)
             #Base.include_dependency(path)
             gpu = "rocm"
         end
+
+	if should_add_cuda_dependency != nothing
+                @debug "Adding include dependency on $(should_add_cuda_dependency)"
+                Base.include_dependency(should_add_cuda_dependency)
+	end
 
     end
 
