@@ -341,8 +341,6 @@ sed -i -e "s/BB_TARGET/${bb_target}/g" \
 
 export HERMETIC_PYTHON_VERSION=3.12
 
-rm -f /workspace/srcdir/lib/libamd_comgr.so*
-
 $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]}
 
 sed -i "s/^cc_library(/cc_library(linkstatic=True,/g" /workspace/bazel_root/*/external/llvm-raw/utils/bazel/llvm-project-overlay/mlir/BUILD.bazel
@@ -448,7 +446,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
     find bazel-bin
     find ${libdir}
-
+    
     install -Dvm 755 \
         $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_dw.so* \
         -t ${libdir}/rocm_sysdeps/lib
