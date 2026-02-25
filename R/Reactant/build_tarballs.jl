@@ -82,8 +82,6 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
-
-    ls -alh $ROCM_PATH/lib/libamd_comgr.so*
 fi
 
 mkdir -p .local/bin
@@ -318,7 +316,6 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 	    --action_env=CLANG_COMPILER_PATH=$(which clang)
 	    --define=using_clang=true
     )
-    ls -alh $ROCM_PATH/lib/libamd_comgr.so*
 fi
 
 if [[ "${target}" == *-freebsd* ]]; then
@@ -343,8 +340,6 @@ sed -i -e "s/BB_TARGET/${bb_target}/g" \
        BUILD
 
 export HERMETIC_PYTHON_VERSION=3.12
-
-rm -f /workspace/srcdir/lib/libamd_comgr.so*
 
 $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]}
 
@@ -447,14 +442,11 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
-    ls -alh $ROCM_PATH/lib/libamd_comgr.so*
     rm -rf bazel-bin/_solib_local/*stub*/*so*
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
     find bazel-bin
     find ${libdir}
     
-    ls -alh $ROCM_PATH/lib/libamd_comgr.so*
-
     install -Dvm 755 \
         $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_dw.so* \
         -t ${libdir}/rocm_sysdeps/lib
