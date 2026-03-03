@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "51060a6d3fb02101fe61fb7f6e9abfc8fa9a3b03"
-version = v"0.0.344"
+reactant_commit = "b9be504dc2fc6dfae9f697cfe878c40baf41de43"
+version = v"0.0.345"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -215,6 +215,9 @@ if [[ "${target}" == *-mingw* ]]; then
     BAZEL_BUILD_FLAGS+=(--copt=-DPTHREADPOOL_USE_PTHREADS=1)
     BAZEL_BUILD_FLAGS+=(--copt=-DWIN32_LEAN_AND_MEAN)
     BAZEL_BUILD_FLAGS+=(--copt=-DNOGDI)
+    # mingw version is too old for bcrypt.h to contain this defn
+    BAZEL_BUILD_FLAGS+=(--copt="-DBCRYPT_RSA_ALG_HANDLE=((BCRYPT_ALG_HANDLE)0x000000e1)")
+    BAZEL_BUILD_FLAGS+=(--copt="-DBCRYPT_MD5_ALG_HANDLE=((BCRYPT_ALG_HANDLE)0x00000021)")
     if [[ "${target}" == x86_64* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:win_x86_64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
