@@ -49,7 +49,7 @@ env:
 jobs:
   define-matrix:
     name: Define matrix
-    runs-on: 'ubuntu-latest'
+    runs-on: 'linux-x86-n2-32'
     timeout-minutes: 30
 
     outputs:
@@ -215,7 +215,7 @@ jobs:
   # example to mark required jobs in CI settings
   all-builds-successful:
     name: Successful builds
-    runs-on: 'ubuntu-latest'
+    runs-on: 'linux-x86-n2-32'
     timeout-minutes: 5
     needs: build-platforms
     steps:
@@ -225,7 +225,7 @@ jobs:
 
   register:
     name: Register
-    runs-on: 'ubuntu-latest'
+    runs-on: 'linux-x86-n2-32'
     timeout-minutes: 60
     # We only register on commits on `main` in the `EnzymeAD/ReactantBuilder` repo.
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'EnzymeAD/ReactantBuilder' }}
