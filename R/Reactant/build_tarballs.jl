@@ -679,7 +679,7 @@ augment_platform_block="""
     """
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
-for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.0"), rocm_version in ("none", "7.1",), platform in platforms
+for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "7.1",), platform in platforms
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -770,7 +770,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         "12.6" => "12.6.3",
         "12.8" => "12.8.1",
         "12.9" => "12.9.1",
-        "13.0" => "13.1.1"
+        "13.0" => "13.0.1"
+        "13.1" => "13.1.1"
     )
 
     hermetic_rocm_version_map = Dict(
