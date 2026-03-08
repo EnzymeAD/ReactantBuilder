@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "75d3b9838065c8c4a7f588d8d77bdbad8f8ec43f"
+reactant_commit = "5e0c1668093db4cdb3d041fb431be235a0deef58"
 version = v"0.0.348"
 
 sources = [
@@ -795,7 +795,17 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     platform_sources = BinaryBuilder.AbstractSource[sources...]
 
     if arch(platform) == "aarch64" && gpu == "cuda"
-        if hermetic_cuda_version_map[cuda_version] == "13.0.1"
+        if hermetic_cuda_version_map[cuda_version] == "13.1.1"
+            # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.1.1.json
+            push!(platform_sources,
+		  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.1.115-archive.tar.xz",
+			     "9038a2bf1237d9decdf99d90c4b43639536c9dbe4b3a40d1e6add5413a02096f"),
+		  )
+	    push!(platform_sources,
+                  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.1.115-archive.tar.xz",
+			     "746ffb5d35ebeb13a633f772a435bcb8a1b3b06da9c6aec5f5e709f5aad0e476"),
+                  )
+	elseif hermetic_cuda_version_map[cuda_version] == "13.0.1"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
             push!(platform_sources,
 		  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.0.88-archive.tar.xz",
@@ -897,7 +907,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 	]
 	cudnn = true
 	nvrtc = true
-	others = VersionNumber(cuda_version) >= v"13"
+	others = false # VersionNumber(cuda_version) >= v"13"
 	if cudnn
         append!(libs, String[
                 "libcudnn_engines_precompiled",
