@@ -82,7 +82,6 @@ jobs:
         with:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
-        id: julia-cache
         uses: julia-actions/cache@v3
       - name: Instantiate environment
         timeout-minutes: 20
@@ -179,7 +178,6 @@ jobs:
         with:
           version: '${{ inputs.julia_version }}'
       # - name: Load Julia packages from cache
-      #   id: julia-cache
       #   uses: julia-actions/cache@v3
       - name: Instantiate environment
         timeout-minutes: 20
@@ -270,7 +268,6 @@ jobs:
         with:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
-        id: julia-cache
         uses: julia-actions/cache@v3
       - uses: actions/download-artifact@v8
         with:
@@ -305,11 +302,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           JLBUILD_GITHUB_TOKEN: ${{ secrets.JLBUILD_GITHUB_TOKEN }}
-      - name: Save Julia depot cache on cancel or failure
-        id: julia-cache-save
-        if: cancelled() || failure()
-        uses: actions/cache/save@v5
-        with:
-          path: |
-            ${{ steps.julia-cache.outputs.cache-paths }}
-          key: ${{ steps.julia-cache.outputs.cache-key }}
