@@ -83,7 +83,7 @@ jobs:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
         id: julia-cache
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       - name: Instantiate environment
         timeout-minutes: 20
         shell: julia --color=yes {0}
@@ -180,7 +180,7 @@ jobs:
           version: '${{ inputs.julia_version }}'
       # - name: Load Julia packages from cache
       #   id: julia-cache
-      #   uses: julia-actions/cache@v2
+      #   uses: julia-actions/cache@v3
       - name: Instantiate environment
         timeout-minutes: 20
         shell: julia --color=yes {0}
@@ -271,7 +271,7 @@ jobs:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
         id: julia-cache
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
