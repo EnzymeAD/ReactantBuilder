@@ -30,7 +30,7 @@ else
 end
 
 const gpu_version_preference = if haskey(preferences, "gpu_version")
-    expected = ("none", "12.9", "13.0", "7.1")
+    expected = ("none", "12.9", "13.1", "7.1")
     if isa(preferences["gpu_version"], String) && preferences["gpu_version"] in expected
         preferences["gpu_version"]
     else
@@ -169,7 +169,7 @@ function augment_platform!(platform::Platform)
                 if v"12" <= current_cuda_version < v"13"
                     gpu_version_tag = "12.9"
                 elseif v"13.0" <= current_cuda_version < v"14"
-                    gpu_version_tag = "13.0"
+                    gpu_version_tag = "13.1"
                 else
                     @warn "CUDA version $(current_cuda_version) in $(path) not supported with this version of Reactant (min supported: 12)"
                 end

@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "ab3275e7b5eb15d6b5afa214ebf009ee8d5fa573"
-version = v"0.0.347"
+reactant_commit = "2e6f60edc32922f22dad70672315732e1467a801"
+version = v"0.0.348"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -679,7 +679,7 @@ augment_platform_block="""
     """
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
-for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.0"), rocm_version in ("none", "7.1",), platform in platforms
+for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "7.1",), platform in platforms
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -770,7 +770,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         "12.6" => "12.6.3",
         "12.8" => "12.8.1",
         "12.9" => "12.9.1",
-        "13.0" => "13.0.1"
+        "13.0" => "13.0.1",
+        "13.1" => "13.1.1"
     )
 
     hermetic_rocm_version_map = Dict(
@@ -795,7 +796,17 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     platform_sources = BinaryBuilder.AbstractSource[sources...]
 
     if arch(platform) == "aarch64" && gpu == "cuda"
-        if hermetic_cuda_version_map[cuda_version] == "13.0.1"
+        if hermetic_cuda_version_map[cuda_version] == "13.1.1"
+            # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.1.1.json
+            push!(platform_sources,
+		  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.1.115-archive.tar.xz",
+			     "9038a2bf1237d9decdf99d90c4b43639536c9dbe4b3a40d1e6add5413a02096f"),
+		  )
+	    push!(platform_sources,
+                  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.1.115-archive.tar.xz",
+			     "746ffb5d35ebeb13a633f772a435bcb8a1b3b06da9c6aec5f5e709f5aad0e476"),
+                  )
+	elseif hermetic_cuda_version_map[cuda_version] == "13.0.1"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
             push!(platform_sources,
 		  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.0.88-archive.tar.xz",
@@ -897,7 +908,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 	]
 	cudnn = true
 	nvrtc = true
-	others = VersionNumber(cuda_version) >= v"13"
+	others = false # VersionNumber(cuda_version) >= v"13"
 	if cudnn
         append!(libs, String[
                 "libcudnn_engines_precompiled",
