@@ -101,6 +101,9 @@ export BAZEL_CXXOPTS="-std=c++17"
 BAZEL_FLAGS=()
 BAZEL_BUILD_FLAGS=(-c $MODE)
 
+BAZEL_BUILD_FLAGS+=(--config=public_cache_push)
+
+
 # don't run out of temporary space
 BAZEL_FLAGS+=(--output_user_root=$WORKSPACE/bazel_root)
 BAZEL_FLAGS+=(--server_javabase=$JAVA_HOME)
