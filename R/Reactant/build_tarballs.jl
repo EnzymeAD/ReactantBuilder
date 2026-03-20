@@ -306,7 +306,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     fi
 
     BAZEL_BUILD_FLAGS+=(--copt=-stdlib=libstdc++)
-    BAZEL_BUILD_FLAGS+=(--copt=-fno-gpu-id)
+    BAZEL_BUILD_FLAGS+=(--per_file_copt='\.cu\.cc$@-fno-gpu-id')
 
     BAZEL_BUILD_FLAGS+=(
 		--action_env=ROCM_PATH=$ROCM_PATH
