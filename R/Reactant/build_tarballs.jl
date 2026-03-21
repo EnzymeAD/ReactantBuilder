@@ -54,6 +54,10 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
     export ROCM_PATH=$WORKSPACE/srcdir
 
+    # ROCm does not seem to get on well with ccache
+    # https://github.com/ROCm/TheRock/blob/main/docs/development/windows_support.md#lld-link-error-duplicate-symbol
+    export USE_CCACHE=false
+
     mv $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442
     rm $ROCM_PATH/lib/libhiprtc-builtins.so.7
     ln -s $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442 $ROCM_PATH/lib/libhiprtc-builtins.so.7
