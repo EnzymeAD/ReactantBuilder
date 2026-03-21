@@ -82,7 +82,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,vrun ,PRE_FLAGS+=( -L$ROCM_PATH/lib ); vrun ,g" `which clang++`
     cp `which clang` $ROCM_PATH/bin/hipcc
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
-    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include,g" $ROCM_PATH/bin/hipcc
+    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=none -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
@@ -310,7 +310,6 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     fi
 
     BAZEL_BUILD_FLAGS+=(--copt=-stdlib=libstdc++)
-    BAZEL_BUILD_FLAGS+=(--copt=-fuse-cuid=random)
 
     BAZEL_BUILD_FLAGS+=(
 		--action_env=ROCM_PATH=$ROCM_PATH
