@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
-repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "41528186bd5e6f556dc241e8f95ce74fda1574f8"
+repo = "https://github.com/jariji/Reactant.jl.git"
+reactant_commit = "fe3d1c99fdd9419bb91154c461ff8ed2aaebd960"
 version = v"0.0.359"
 
 sources = [
@@ -317,7 +317,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 		--repo_env=ROCM_PATH=$ROCM_PATH
 
 		# anything before 942 hits a 128-bit error
-		--action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
+		--action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1102,gfx1200,gfx1201"
 
                 --linkopt="-L$ROCM_PATH/lib/rocm_sysdeps/lib"
 
