@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "aece0b1a650c059e6dee6e39254613bad77c664e"
+reactant_commit = "56508ea42e87309b05a27886b53df982388cb34e"
 version = v"0.0.372"
 
 sources = [
@@ -264,7 +264,7 @@ fi
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     BAZEL_BUILD_FLAGS+=(--repo_env=HERMETIC_CUDA_VERSION="${HERMETIC_CUDA_VERSION}")
     if [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
-    	BAZEL_BUILD_FLAGS+=(--config=cuda13)
+    	BAZEL_BUILD_FLAGS+=(--config=cuda13 --config=cuda_static)
     else
     	BAZEL_BUILD_FLAGS+=(--config=cuda12)
     fi
