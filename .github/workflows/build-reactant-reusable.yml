@@ -78,7 +78,7 @@ jobs:
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
@@ -174,7 +174,7 @@ jobs:
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '${{ inputs.julia_version }}'
       # - name: Load Julia packages from cache
@@ -264,7 +264,7 @@ jobs:
           PRODUCTS_DIR=${{ inputs.build_project }}/products
           mkdir -p "${PRODUCTS_DIR}"
           echo "PRODUCTS_DIR=${PRODUCTS_DIR}" >> "${GITHUB_ENV}"
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache

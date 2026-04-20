@@ -37,7 +37,7 @@ jobs:
 
           # Now remove the artifacts
           rm -rf "${JULIA_DEPOT_PATH}/artifacts"
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
       - name: "Cleanup the depot a little bit more"
         run: |
           julia -e 'using Pkg; Pkg.gc()'
