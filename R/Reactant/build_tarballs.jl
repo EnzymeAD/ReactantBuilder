@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "55dd6865419bcc570699a233cb6471c2c6fef90b"
-version = v"0.0.376"
+reactant_commit = "16d90c7c0fa74c6b4d94565dba4a2702156c0496"
+version = v"0.0.377"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -493,6 +493,10 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     
     install -Dvm 755 \
         $ROCM_PATH/lib/libMIOpen.so* \
+        -t ${libdir}
+    
+    install -Dvm 755 \
+        $ROCM_PATH/lib/libhsa-runtime64.so* \
         -t ${libdir}
     
     install -Dvm 755 \
