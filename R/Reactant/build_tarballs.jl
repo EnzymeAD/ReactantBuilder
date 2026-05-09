@@ -385,6 +385,8 @@ elif [[ "${target}" == *mingw32* ]]; then
 
     sed -i.bak1 -e "s/^ws2_32.lib/-lws2_32/g" \
                 -e "s/^ntdll.lib/-lntdll/g" \
+                -e "s/^winhttp.lib/-lwinhttp/g" \
+                -e "/crypt32.lib/d" \
                 bazel-bin/libReactantExtra.so-2.params
 
     echo "-lole32" >> bazel-bin/libReactantExtra.so-2.params
