@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "55dd6865419bcc570699a233cb6471c2c6fef90b"
-version = v"0.0.376"
+reactant_commit = "cef26d44f550474c9fdc9367ef6a6ae7c403b66f"
+version = v"0.0.377"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -385,6 +385,8 @@ elif [[ "${target}" == *mingw32* ]]; then
 
     sed -i.bak1 -e "s/^ws2_32.lib/-lws2_32/g" \
                 -e "s/^ntdll.lib/-lntdll/g" \
+                -e "s/^winhttp.lib/-lwinhttp/g" \
+                -e "/crypt32.lib/d" \
                 bazel-bin/libReactantExtra.so-2.params
 
     echo "-lole32" >> bazel-bin/libReactantExtra.so-2.params
@@ -493,6 +495,10 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     
     install -Dvm 755 \
         $ROCM_PATH/lib/libMIOpen.so* \
+        -t ${libdir}
+    
+    install -Dvm 755 \
+        $ROCM_PATH/lib/libhsa-runtime64.so* \
         -t ${libdir}
     
     install -Dvm 755 \
