@@ -329,7 +329,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     BAZEL_BUILD_FLAGS+=(--copt=-no-canonical-prefixes --host_copt=-no-canonical-prefixes)
 
     # For GCC/mixed toolchain wrapper edge cases
-    BAZEL_BUILD_FLAGS+=(--copt=-fno-canonical-system-headers --host_copt=-fno-canonical-system-headers)
+    # BAZEL_BUILD_FLAGS+=(--copt=-fno-canonical-system-headers --host_copt=-fno-canonical-system-headers)
 fi
 
 if [[ "${target}" == *-freebsd* ]]; then
