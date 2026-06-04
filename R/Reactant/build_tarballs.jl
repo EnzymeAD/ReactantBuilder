@@ -326,7 +326,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     )
     
     # Prevent Clang/hipcc from turning relative symlinks into absolute paths in depfiles
-    BAZEL_BUILD_FLAGS+=(--copt=-no-canonical-prefixes --host_copt=-no-canonical-prefixes)
+    BAZEL_BUILD_FLAGS+=(--copt=-no-canonical-prefixes --cxxopt=-no-canonical-prefixes)
 
     # For GCC/mixed toolchain wrapper edge cases
     # BAZEL_BUILD_FLAGS+=(--copt=-fno-canonical-system-headers --host_copt=-fno-canonical-system-headers)
@@ -419,6 +419,9 @@ elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]
 elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]; then
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
     cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+elif [[ "${bb_full_target}" == *rocm* ]]; then
+    $BAZEL ${BAZEL_FLAGS[@]} fetch --enable_bzlmod --configure --force
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
 else
     $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
