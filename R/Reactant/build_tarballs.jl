@@ -581,6 +581,10 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         $ROCM_PATH/lib/libamd_comgr.so* \
         -t ${libdir}
 
+    install -Dvm 755 \
+        $ROCM_PATH/lib/librocm_sysdeps_sqlite3.so* \
+        -t ${libdir}
+
      install -Dvm 755 \
         $ROCM_PATH/lib/host-math/lib/libcholmod.so* \
        -t ${libdir}/host-math/lib
