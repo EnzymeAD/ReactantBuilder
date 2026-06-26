@@ -492,7 +492,11 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     install -Dvm 755 \
         $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_liblzma.so* \
         -t ${libdir}/rocm_sysdeps/lib
-    
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_sqlite3.so* \
+        -t ${libdir}/rocm_sysdeps/lib
+
     install -Dvm 755 \
         $ROCM_PATH/lib/libMIOpen.so* \
         -t ${libdir}
@@ -579,10 +583,6 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
     install -Dvm 755 \
         $ROCM_PATH/lib/libamd_comgr.so* \
-        -t ${libdir}
-
-    install -Dvm 755 \
-        $ROCM_PATH/lib/librocm_sysdeps_sqlite3.so* \
         -t ${libdir}
 
      install -Dvm 755 \
