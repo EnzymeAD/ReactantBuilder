@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "f15f193193ddc36a08b5edef5505d2430da920a8"
-version = v"0.0.389"
+reactant_commit = "3db067a4bb0ab0226e4b78c55e60b723330763bf"
+version = v"0.0.390"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -111,6 +111,10 @@ BAZEL_FLAGS+=(--server_javabase=$JAVA_HOME)
 # BAZEL_FLAGS+=(--extra_toolchains=@local_jdk//:all)
 
 BAZEL_BUILD_FLAGS+=(--jobs ${nproc})
+
+if [[ USE_GCPCACHE ]]; then
+	BAZEL_BUILD_FLAGS+=(--config=jll_cache_push)
+fi
 
 # Use ccache to speedup re-builds
 BAZEL_BUILD_FLAGS+=(--action_env=USE_CCACHE=${USE_CCACHE} --action_env=CCACHE_DIR=${CCACHE_DIR})
@@ -805,6 +809,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
     # Don't use ccache on Yggdrasil, doesn't seem to work.
     USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
+	USE_GCPCACHE=$(BinaryBuilder.is_yggdrasil())
     ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
     HERMETIC_ROCM_VERSION=$(hermetic_rocm_version_map[rocm_version])
     """
