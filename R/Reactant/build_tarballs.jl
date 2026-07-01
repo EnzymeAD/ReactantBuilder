@@ -112,7 +112,7 @@ BAZEL_FLAGS+=(--server_javabase=$JAVA_HOME)
 
 BAZEL_BUILD_FLAGS+=(--jobs ${nproc})
 
-if [[ USE_GCPCACHE ]]; then
+if [[ $USE_GCPCACHE == "true" ]]; then
 	BAZEL_BUILD_FLAGS+=(--config=jll_cache_push)
 fi
 
