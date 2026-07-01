@@ -809,7 +809,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
     # Don't use ccache on Yggdrasil, doesn't seem to work.
     USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
-    USE_GCPCACHE=$(get(ENV, "GITHUB_ACTIONS", "false") == "true" && get(ENV, "GITHUB_ACTION_REPOSITORY", "") in ("EnzymeAD/ReactantBuilder", "EnzymeAD/Enzyme-JAX"))
+    USE_GCPCACHE=$(get(ENV, "GITHUB_ACTIONS", "false") == "true" && get(ENV, "GITHUB_REPOSITORY", "") in ("EnzymeAD/ReactantBuilder", "EnzymeAD/Enzyme-JAX"))
     ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
     HERMETIC_ROCM_VERSION=$(hermetic_rocm_version_map[rocm_version])
     """
