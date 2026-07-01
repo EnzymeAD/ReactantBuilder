@@ -112,7 +112,7 @@ BAZEL_FLAGS+=(--server_javabase=$JAVA_HOME)
 
 BAZEL_BUILD_FLAGS+=(--jobs ${nproc})
 
-if [[ USE_GCPCACHE ]]; then
+if [[ "${USE_GCPCACHE}" == "true" ]]; then
 	BAZEL_BUILD_FLAGS+=(--config=jll_cache_push)
 fi
 
@@ -809,7 +809,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
     # Don't use ccache on Yggdrasil, doesn't seem to work.
     USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
-	USE_GCPCACHE=$(BinaryBuilder.is_yggdrasil())
+    USE_GCPCACHE=$(get(ENV, "GITHUB_ACTIONS", "false") == "true" && startswith(get(ENV, "RUNNER_NAME", ""), "jll"))
     ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
     HERMETIC_ROCM_VERSION=$(hermetic_rocm_version_map[rocm_version])
     """
