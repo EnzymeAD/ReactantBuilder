@@ -273,6 +273,8 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     	BAZEL_BUILD_FLAGS+=(--config=cuda12)
     fi
 
+    BAZEL_BUILD_FLAGS+=(--repo_env=HERMETIC_NCCL_VERSION="${HERMETIC_NCCL_VERSION}")
+
     if [[ "${target}" != x86_64-linux-gnu ]]; then
         # This is the standard `LD_LIBRARY_PATH` we have in our environment + `/usr/lib/csl-glibc-x86_64` to be able to run host `nvcc`/`ptxas`/`fatbinary` during compilation.
         export LD_LIBRARY_PATH="/usr/lib/csl-musl-x86_64:/usr/lib/csl-glibc-x86_64:/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib:/lib64:/lib:/workspace/x86_64-linux-musl-cxx11/destdir/lib:/workspace/x86_64-linux-musl-cxx11/destdir/lib64:/opt/x86_64-linux-musl/x86_64-linux-musl/lib64:/opt/x86_64-linux-musl/x86_64-linux-musl/lib:/opt/${target}/${target}/lib64:/opt/${target}/${target}/lib:/workspace/destdir/lib64"
@@ -807,6 +809,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     prefix="""
     MODE=$(mode)
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
+    HERMETIC_NCCL_VERSION=2.28.9
     # Don't use ccache on Yggdrasil, doesn't seem to work.
     USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
 	USE_GCPCACHE=$(BinaryBuilder.is_yggdrasil())
