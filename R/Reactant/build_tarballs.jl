@@ -259,6 +259,7 @@ fi
 
 if [[ "${target}" == aarch64-* ]]; then
     BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_FEATURE_AES=1)
+    BAZEL_BUILD_FLAGS+=(--copt=-march=armv8+aes)
     BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_NEON=1)
     BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_FEATURE_SHA2=1)
     BAZEL_BUILD_FLAGS+=(--copt=-DDNNL_ARCH_GENERIC=1)
