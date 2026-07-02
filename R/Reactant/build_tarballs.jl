@@ -86,6 +86,25 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
+
+    # fixes "call to __host__ function from __device__ function" error on C++ type_traits header when compiling CUDA code with hipcc
+    cat << 'EOF' > /workspace/srcdir/lib/llvm/lib/clang/22/include/cuda_wrappers/type_traits
+    #ifndef __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
+    #define __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
+    #pragma clang force_cuda_host_device begin
+    #include_next <type_traits>
+    #pragma clang force_cuda_host_device end
+    #endif // __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
+    EOF
+
+    cat << 'EOF' > /workspace/srcdir/lib/llvm/lib/clang/22/include/cuda_wrappers/bits/move.h
+    #ifndef __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
+    #define __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
+    #pragma clang force_cuda_host_device begin
+    #include_next <bits/move.h>
+    #pragma clang force_cuda_host_device end
+    #endif // __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
+    EOF
 fi
 
 mkdir -p .local/bin
