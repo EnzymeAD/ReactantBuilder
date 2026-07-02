@@ -258,10 +258,7 @@ if [[ "${target}" == *-linux-* ]]; then
 fi
 
 if [[ "${target}" == aarch64-* ]]; then
-    BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_FEATURE_AES=1)
-    BAZEL_BUILD_FLAGS+=(--copt=-march=armv8+aes)
-    BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_NEON=1)
-    BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_FEATURE_SHA2=1)
+    BAZEL_BUILD_FLAGS+=(--copt=-march=armv8+aes+sha2)
     BAZEL_BUILD_FLAGS+=(--copt=-DDNNL_ARCH_GENERIC=1)
     BAZEL_BUILD_FLAGS+=(--define=@xla//build_with_mkl_aarch64=true)
 fi
