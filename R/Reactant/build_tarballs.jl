@@ -934,7 +934,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 	libs = String[
                 "libnccl",
                 # "libcuda",
-                "libnvshmem_host",
+                # "libnvshmem_host",
                 "nvshmem_bootstrap_uid",
                 "nvshmem_transport_ibrc"
 	]
