@@ -444,9 +444,6 @@ mkdir -p ${libdir}
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     rm -rf bazel-bin/_solib_local/*stub*/*so*
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
-    cp -v bazel-ReactantExtra/external/nvidia_nvshmem/lib/libnvshmem_device.bc ${libdir}
-    find bazel-bin
-    find ${libdir}
 
     # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     if [[ "${target}" == x86_64-linux-gnu ]]; then
@@ -983,7 +980,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         push!(products, ExecutableProduct(["ptxas"], :ptxas, "lib/cuda/bin"))
         push!(products, ExecutableProduct(["fatbinary"], :fatbinary, "lib/cuda/bin"))
         push!(products, FileProduct("lib/cuda/nvvm/libdevice/libdevice.10.bc", :libdevice))
-        push!(products, FileProduct("lib/libnvshmem_device.bc", :libnvshmem_device))
     end
 
     if gpu == "rocm"
