@@ -935,8 +935,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                 "libnccl",
                 # "libcuda",
                 # "libnvshmem_host",
-                "nvshmem_bootstrap_uid",
-                "nvshmem_transport_ibrc"
+                # "nvshmem_bootstrap_uid",
+                # "nvshmem_transport_ibrc"
 	]
 	cudnn = true
 	nvrtc = true
