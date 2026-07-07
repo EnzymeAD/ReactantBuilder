@@ -17,7 +17,7 @@ sources = [
 ]
 
 # When we run CI in Enzyme-JAX repository we need to be able to change the commit to check out.
-enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "update-jax-ml-jax")
+enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "")
 
 # Bash recipe for building across all platforms
 script = raw"""
