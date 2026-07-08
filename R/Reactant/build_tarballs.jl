@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "ea9253ba28fcd81b13caf78faa13f11a38e441ba"
+reactant_commit = "8e91f8791c2b3155777818325b541d05bf6135db"
 version = v"0.0.391"
 
 sources = [
@@ -86,6 +86,23 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
+
+    # fixes "call to __host__ function from __device__ function" error on C++ type_traits header when compiling CUDA code with hipcc
+    echo "#ifndef __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
+    #define __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
+    #pragma clang force_cuda_host_device begin
+    #include_next <type_traits>
+    #pragma clang force_cuda_host_device end
+    #endif // __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
+    " > /workspace/srcdir/lib/llvm/lib/clang/22/include/cuda_wrappers/type_traits
+
+    echo "#ifndef __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
+    #define __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
+    #pragma clang force_cuda_host_device begin
+    #include_next <bits/move.h>
+    #pragma clang force_cuda_host_device end
+    #endif // __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
+    " > /workspace/srcdir/lib/llvm/lib/clang/22/include/cuda_wrappers/bits/move.h
 fi
 
 mkdir -p .local/bin
@@ -258,9 +275,7 @@ if [[ "${target}" == *-linux-* ]]; then
 fi
 
 if [[ "${target}" == aarch64-* ]]; then
-    BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_FEATURE_AES=1)
-    BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_NEON=1)
-    BAZEL_BUILD_FLAGS+=(--copt=-D__ARM_FEATURE_SHA2=1)
+    BAZEL_BUILD_FLAGS+=(--copt=-march=armv8+aes+sha2)
     BAZEL_BUILD_FLAGS+=(--copt=-DDNNL_ARCH_GENERIC=1)
     BAZEL_BUILD_FLAGS+=(--define=@xla//build_with_mkl_aarch64=true)
 fi
@@ -429,9 +444,6 @@ mkdir -p ${libdir}
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     rm -rf bazel-bin/_solib_local/*stub*/*so*
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
-    cp -v bazel-ReactantExtra/external/nvidia_nvshmem/lib/libnvshmem_device.bc ${libdir}
-    find bazel-bin
-    find ${libdir}
 
     # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     if [[ "${target}" == x86_64-linux-gnu ]]; then
@@ -922,9 +934,9 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 	libs = String[
                 "libnccl",
                 # "libcuda",
-                "libnvshmem_host",
-                "nvshmem_bootstrap_uid",
-                "nvshmem_transport_ibrc"
+                # "libnvshmem_host",
+                # "nvshmem_bootstrap_uid",
+                # "nvshmem_transport_ibrc"
 	]
 	cudnn = true
 	nvrtc = true
@@ -968,7 +980,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         push!(products, ExecutableProduct(["ptxas"], :ptxas, "lib/cuda/bin"))
         push!(products, ExecutableProduct(["fatbinary"], :fatbinary, "lib/cuda/bin"))
         push!(products, FileProduct("lib/cuda/nvvm/libdevice/libdevice.10.bc", :libdevice))
-        push!(products, FileProduct("lib/libnvshmem_device.bc", :libnvshmem_device))
     end
 
     if gpu == "rocm"
