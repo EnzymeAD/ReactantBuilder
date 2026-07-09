@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "71c93520020d7fe2dbb746b05cc712e071bdac9a"
+reactant_commit = "8c775304e87e2c3fb7984593bf48ef852b6c927b"
 version = v"0.0.393"
 
 sources = [
@@ -17,7 +17,7 @@ sources = [
 ]
 
 # When we run CI in Enzyme-JAX repository we need to be able to change the commit to check out.
-enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "update-jax-ml-jax")
+enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "")
 
 # Bash recipe for building across all platforms
 script = raw"""
