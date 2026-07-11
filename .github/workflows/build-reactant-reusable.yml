@@ -194,7 +194,7 @@ jobs:
       - name: Build Reactant
         timeout-minutes: 120
         run: |
-          julia --color=yes --threads=16 build_tarballs.jl --verbose ${{ matrix.platform }}
+          julia --color=yes build_tarballs.jl --verbose ${{ matrix.platform }}
         working-directory: ${{ inputs.build_project }}
         env:
           ENZYME_JAX_COMMIT: ${{ inputs.enzyme_jax_commit }}
