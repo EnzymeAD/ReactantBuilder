@@ -21,7 +21,6 @@ enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "")
 
 # Bash recipe for building across all platforms
 script = raw"""
-false
 cd ${WORKSPACE}/srcdir
 tar xzf OpenJDK21U-jdk_x64_alpine-linux_hotspot_21.0.7_6.tar.gz
 tar xzf Bazel.v*.tar.gz
@@ -783,7 +782,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     end
 
     # When we're running CI for Enzyme-JAX, only build few platforms
-    if true
+    if !isempty(enzyme_jax_commit)
         if !(gpu == "rocm" || (Sys.islinux(platform) && gpu == "cuda") || (Sys.isapple(platform) && mode == "opt") || (Sys.iswindows(platform)))
             continue
         end
