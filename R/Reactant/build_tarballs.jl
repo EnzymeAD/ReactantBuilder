@@ -17,7 +17,7 @@ sources = [
 ]
 
 # When we run CI in Enzyme-JAX repository we need to be able to change the commit to check out.
-enzyme_jax_commit = "d190956f5ffc420b908159efbd8e69d1569e5932"
+enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "")
 
 # Bash recipe for building across all platforms
 script = raw"""
@@ -785,7 +785,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     # When we're running CI for Enzyme-JAX, only build few platforms
     if !isempty(enzyme_jax_commit)
-        if !((Sys.iswindows(platform)))
+        if !(gpu == "rocm" || (Sys.islinux(platform) && gpu == "cuda") || (Sys.isapple(platform) && mode == "opt") || (Sys.iswindows(platform)))
             continue
         end
     end
