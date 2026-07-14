@@ -220,10 +220,17 @@ jobs:
       image: 'ghcr.io/enzymead/reactant-docker-images@sha256:cd45d851f5ea544f88d042eafefa53d948c229fffcab6189019324e3b02b505a'
     timeout-minutes: 5
     needs: build-platforms
+    if: ${{ always() }}
     steps:
-      - name: Success
+      - name: Check build results
+        shell: bash
         run: |
-          echo 'Success'
+          echo "build-platforms result: ${{ needs.build-platforms.result }}"
+          if [[ "${{ needs.build-platforms.result }}" == "success" ]]; then
+              exit 0
+          else
+              exit 1
+          fi
 
   register:
     name: Register
