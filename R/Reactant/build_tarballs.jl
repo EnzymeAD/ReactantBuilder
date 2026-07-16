@@ -236,8 +236,6 @@ fi
 if [[ "${target}" == *-mingw* ]]; then
     sed -i 's/noincompatible_enable_cc_toolchain_resolution/incompatible_enable_cc_toolchain_resolution/' .bazelrc
     BAZEL_BUILD_FLAGS+=(--compiler=mingw-gcc)
-    # `-femulated-tls` avoids `ld.lld: error: undefined symbol: std::__once_callable`
-    BAZEL_BUILD_FLAGS+=(--copt="-femulated-tls" --cxxopt="-femulated-tls")
     BAZEL_BUILD_FLAGS+=(--copt=-D_USE_MATH_DEFINES)
     BAZEL_BUILD_FLAGS+=(--copt=-DPTHREADPOOL_USE_PTHREADS=1)
     BAZEL_BUILD_FLAGS+=(--copt=-DWIN32_LEAN_AND_MEAN)
