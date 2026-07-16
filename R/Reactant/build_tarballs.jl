@@ -236,6 +236,7 @@ fi
 if [[ "${target}" == *-mingw* ]]; then
     sed -i 's/noincompatible_enable_cc_toolchain_resolution/incompatible_enable_cc_toolchain_resolution/' .bazelrc
     BAZEL_BUILD_FLAGS+=(--compiler=mingw-gcc)
+    BAZEL_BUILD_FLAGS+=(--noremote_accept_cached --remote_upload_local_results=true)
     BAZEL_BUILD_FLAGS+=(--copt=-D_USE_MATH_DEFINES)
     BAZEL_BUILD_FLAGS+=(--copt=-DPTHREADPOOL_USE_PTHREADS=1)
     BAZEL_BUILD_FLAGS+=(--copt=-DWIN32_LEAN_AND_MEAN)
