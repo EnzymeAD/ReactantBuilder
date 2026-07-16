@@ -788,6 +788,10 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         end
     end
 
+    if !(Sys.iswindows(platform))
+        continue
+    end
+
     hermetic_cuda_version_map = Dict(
         # Our platform tags use X.Y version scheme, but for some CUDA versions we need to
         # pass Bazel a full version number X.Y.Z.  See `CUDA_REDIST_JSON_DICT` in
@@ -820,7 +824,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     MODE=$(mode)
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
     # Don't use ccache on Yggdrasil, doesn't seem to work.
-    USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
+    USE_CCACHE=false
     USE_GCPCACHE=$(get(ENV, "GITHUB_ACTIONS", "false") == "true" && startswith(get(ENV, "RUNNER_NAME", ""), "jll"))
     ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
     HERMETIC_ROCM_VERSION=$(hermetic_rocm_version_map[rocm_version])
