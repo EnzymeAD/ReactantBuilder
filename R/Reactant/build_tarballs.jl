@@ -788,10 +788,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         end
     end
 
-    if !(Sys.iswindows(platform))
-        continue
-    end
-
     hermetic_cuda_version_map = Dict(
         # Our platform tags use X.Y version scheme, but for some CUDA versions we need to
         # pass Bazel a full version number X.Y.Z.  See `CUDA_REDIST_JSON_DICT` in
