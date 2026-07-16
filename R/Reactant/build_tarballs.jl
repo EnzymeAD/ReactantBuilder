@@ -194,7 +194,7 @@ fi
 echo "register_toolchains(\\"//:cc_toolchain_for_ygg_host\\")" >> WORKSPACE
 
 if [[ "${target}" == *-darwin* ]]; then
-	BAZEL_BUILD_FLAGS+=(--config=macos)
+    BAZEL_BUILD_FLAGS+=(--config=macos)
     BAZEL_BUILD_FLAGS+=(--define=gcc_linux_x86_32_1=false)
     BAZEL_BUILD_FLAGS+=(--define=gcc_linux_x86_64_1=false)
     BAZEL_BUILD_FLAGS+=(--define=gcc_linux_x86_64_2=false)
@@ -236,8 +236,6 @@ fi
 if [[ "${target}" == *-mingw* ]]; then
     sed -i 's/noincompatible_enable_cc_toolchain_resolution/incompatible_enable_cc_toolchain_resolution/' .bazelrc
     BAZEL_BUILD_FLAGS+=(--compiler=mingw-gcc)
-    # `-femulated-tls` avoids `ld.lld: error: undefined symbol: std::__once_callable`
-    BAZEL_BUILD_FLAGS+=(--copt="-femulated-tls" --cxxopt="-femulated-tls")
     BAZEL_BUILD_FLAGS+=(--copt=-D_USE_MATH_DEFINES)
     BAZEL_BUILD_FLAGS+=(--copt=-DPTHREADPOOL_USE_PTHREADS=1)
     BAZEL_BUILD_FLAGS+=(--copt=-DWIN32_LEAN_AND_MEAN)
@@ -285,9 +283,9 @@ fi
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     BAZEL_BUILD_FLAGS+=(--repo_env=HERMETIC_CUDA_VERSION="${HERMETIC_CUDA_VERSION}")
     if [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
-    	BAZEL_BUILD_FLAGS+=(--config=cuda13)
+        BAZEL_BUILD_FLAGS+=(--config=cuda13)
     else
-    	BAZEL_BUILD_FLAGS+=(--config=cuda12)
+        BAZEL_BUILD_FLAGS+=(--config=cuda12)
     fi
 
     if [[ "${target}" != x86_64-linux-gnu ]]; then
@@ -323,27 +321,27 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
         BAZEL_BUILD_FLAGS+=(
             --linkopt="-L${prefix}/libcxx/lib"
-	)
+        )
     else
         BAZEL_BUILD_FLAGS+=(
             --linkopt="-stdlib=libstdc++"
-	)
+        )
     fi
 
     BAZEL_BUILD_FLAGS+=(--copt=-stdlib=libstdc++)
     BAZEL_BUILD_FLAGS+=(--copt=-fuse-cuid=random)
 
     BAZEL_BUILD_FLAGS+=(
-		--action_env=ROCM_PATH=$ROCM_PATH
-		--repo_env=ROCM_PATH=$ROCM_PATH
+        --action_env=ROCM_PATH=$ROCM_PATH
+        --repo_env=ROCM_PATH=$ROCM_PATH
 
-		# anything before 942 hits a 128-bit error
-		--action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
+        # anything before 942 hits a 128-bit error
+        --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
 
-                --linkopt="-L$ROCM_PATH/lib/rocm_sysdeps/lib"
+        --linkopt="-L$ROCM_PATH/lib/rocm_sysdeps/lib"
 
-	    --action_env=CLANG_COMPILER_PATH=$(which clang)
-	    --define=using_clang=true
+        --action_env=CLANG_COMPILER_PATH=$(which clang)
+        --define=using_clang=true
     )
 fi
 
@@ -474,11 +472,11 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
     find bazel-bin
     find ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_dw.so* \
         -t ${libdir}/rocm_sysdeps/lib
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_numa.so* \
         -t ${libdir}/rocm_sysdeps/lib
@@ -518,27 +516,27 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     install -Dvm 755 \
         $ROCM_PATH/lib/libMIOpen.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/libhsa-runtime64.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/libhsa-amd-aqlprofile64.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/librccl.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/librocm_smi64.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/librocprofiler-register.so* \
         -t ${libdir}
-    
+
    install -Dvm 755 \
         $ROCM_PATH/lib/librocm-core.so* \
         -t ${libdir}
@@ -562,7 +560,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     install -Dvm 755 \
         $ROCM_PATH/lib/libhiprtc.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/libhiprtc-builtins.so* \
         -t ${libdir}
@@ -590,7 +588,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     install -Dvm 755 \
         $ROCM_PATH/lib/libhipsolver_fortran.so* \
         -t ${libdir}
-    
+
     install -Dvm 755 \
         $ROCM_PATH/lib/libhipsolver.so* \
         -t ${libdir}
@@ -720,29 +718,29 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     gpu_version = "none"
     if gpu == "none"
-	 if cuda_version != "none"
-	     continue
-	 end
-	 if rocm_version != "none"
-	     continue
-	 end
+        if cuda_version != "none"
+            continue
+        end
+        if rocm_version != "none"
+            continue
+        end
     elseif gpu == "rocm"
-	 if cuda_version != "none"
-	     continue
-	 end
-	 if rocm_version == "none"
-	     continue
-	 end
-	gpu_version = rocm_version
+        if cuda_version != "none"
+            continue
+        end
+        if rocm_version == "none"
+            continue
+        end
+        gpu_version = rocm_version
     else
-	 @assert gpu == "cuda"
-	 if cuda_version == "none"
-	     continue
-	 end
-	 if rocm_version != "none"
-	     continue
-	 end
-	gpu_version = cuda_version
+        @assert gpu == "cuda"
+        if cuda_version == "none"
+            continue
+        end
+        if rocm_version != "none"
+            continue
+        end
+        gpu_version = cuda_version
     end
     augmented_platform["gpu_version"] = gpu_version
     dependencies = []
@@ -755,10 +753,10 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         if gpu != "none"
             continue
         end
-		if Sys.iswindows(platform)
+        if Sys.iswindows(platform)
             continue
         end
-		if !Sys.isapple(platform) && arch(platform) == "aarch64"
+        if !Sys.isapple(platform) && arch(platform) == "aarch64"
             continue
         end
     end
@@ -817,7 +815,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         "7.1" => "7.1.0",
     )
 
-
     prefix="""
     MODE=$(mode)
     HERMETIC_CUDA_VERSION=$(hermetic_cuda_version_map[cuda_version])
@@ -833,24 +830,24 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         if hermetic_cuda_version_map[cuda_version] == "13.1.1"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.1.1.json
             push!(platform_sources,
-		  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.1.115-archive.tar.xz",
-			     "9038a2bf1237d9decdf99d90c4b43639536c9dbe4b3a40d1e6add5413a02096f"),
-		  )
-	    push!(platform_sources,
-                  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.1.115-archive.tar.xz",
-			     "746ffb5d35ebeb13a633f772a435bcb8a1b3b06da9c6aec5f5e709f5aad0e476"),
+                  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.1.115-archive.tar.xz",
+                             "9038a2bf1237d9decdf99d90c4b43639536c9dbe4b3a40d1e6add5413a02096f"),
                   )
-	elseif hermetic_cuda_version_map[cuda_version] == "13.0.1"
+            push!(platform_sources,
+                  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.1.115-archive.tar.xz",
+                             "746ffb5d35ebeb13a633f772a435bcb8a1b3b06da9c6aec5f5e709f5aad0e476"),
+                  )
+        elseif hermetic_cuda_version_map[cuda_version] == "13.0.1"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
             push!(platform_sources,
-		  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.0.88-archive.tar.xz",
-				"17ef1665b63670887eeba7d908da5669fa8c66bb73b5b4c1367f49929c086353"),
-		  )
-	    push!(platform_sources,
+                  FileSource("https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.0.88-archive.tar.xz",
+                                "17ef1665b63670887eeba7d908da5669fa8c66bb73b5b4c1367f49929c086353"),
+                  )
+            push!(platform_sources,
                   FileSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.0.88-archive.tar.xz",
                                 "01b01e10aa2662ad1b3aeab3317151d7d6d4a650eeade55ded504f6b7fced18e"),
                   )
-	elseif hermetic_cuda_version_map[cuda_version] == "13.0.0"
+        elseif hermetic_cuda_version_map[cuda_version] == "13.0.0"
             # See https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.0.0.json
             push!(platform_sources,
                   FileSource("https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-sbsa/cuda_nvcc-linux-sbsa-13.0.48-archive.tar.xz",
@@ -898,32 +895,32 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
               BuildDependency(PackageSpec(; name="LLVMLibcxx_jll", version=string(preferred_llvm_version))),
               )
     end
-	if gpu == "rocm"
-		# push!(dependencies, HostBuildDependency(PackageSpec("CMake_jll", v"3.30.2")))
-		push!(dependencies, HostBuildDependency("coreutils_jll"))
-		push!(dependencies, Dependency(PackageSpec(name="CompilerSupportLibraries_jll", uuid="e66e0078-7015-5450-92f7-15fbd957f2ae")))
+        if gpu == "rocm"
+                # push!(dependencies, HostBuildDependency(PackageSpec("CMake_jll", v"3.30.2")))
+                push!(dependencies, HostBuildDependency("coreutils_jll"))
+                push!(dependencies, Dependency(PackageSpec(name="CompilerSupportLibraries_jll", uuid="e66e0078-7015-5450-92f7-15fbd957f2ae")))
 
-		push!(platform_sources,
-		    FileSource("https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-x86_64.sh",
-			       "4da8dde69eca0d9bc31420349a204851bfa2a1c87aeb87fe0c05517797edaac4", "miniconda.sh"))
+                push!(platform_sources,
+                    FileSource("https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-x86_64.sh",
+                               "4da8dde69eca0d9bc31420349a204851bfa2a1c87aeb87fe0c05517797edaac4", "miniconda.sh"))
 
-	      if rocm_version == "6.4"
-	       push!(platform_sources,
+              if rocm_version == "6.4"
+               push!(platform_sources,
                     FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.4.0rc20250520.tar.gz",
-				"b3d64777a79f33e8d1b50230f26ac769bd77d5bc11bd850ec111933c842914e9")
+                                "b3d64777a79f33e8d1b50230f26ac769bd77d5bc11bd850ec111933c842914e9")
                   )
-	       elseif rocm_version == "6.5"
-	       push!(platform_sources,
+               elseif rocm_version == "6.5"
+               push!(platform_sources,
                   FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.5.0rc20250610.tar.gz",
-				"113e44dcd7868ffab92193bbcb8653a374494f0c5b393545f08551ea835a1ee5")
+                                "113e44dcd7868ffab92193bbcb8653a374494f0c5b393545f08551ea835a1ee5")
                   )
-	       elseif rocm_version == "7.1"
-	       push!(platform_sources,
+               elseif rocm_version == "7.1"
+               push!(platform_sources,
                   FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx120X-all-7.10.0a20251103.tar.gz",
-				"3cffe4ced6ba1defa526cb7b9d3cbad48791842d585eae48e614835355d9fd8b")
+                                "3cffe4ced6ba1defa526cb7b9d3cbad48791842d585eae48e614835355d9fd8b")
                   )
-	       end
-	end
+               end
+        end
 
     should_build_platform(triplet(augmented_platform)) || continue
 
@@ -933,17 +930,17 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     ]
 
     if gpu == "cuda"
-	libs = String[
+        libs = String[
                 "libnccl",
                 # "libcuda",
                 # "libnvshmem_host",
                 # "nvshmem_bootstrap_uid",
                 # "nvshmem_transport_ibrc"
-	]
-	cudnn = true
-	nvrtc = true
-	others = false # VersionNumber(cuda_version) >= v"13"
-	if cudnn
+        ]
+        cudnn = true
+        nvrtc = true
+        others = false # VersionNumber(cuda_version) >= v"13"
+        if cudnn
         append!(libs, String[
                 "libcudnn_engines_precompiled",
                 "libcudnn_heuristic",
@@ -953,26 +950,26 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                 "libcudnn_ops",
                 "libcudnn_graph",
                 "libcudnn_engines_runtime_compiled",
-		])
-	end
-	if nvrtc
+                ])
+        end
+        if nvrtc
         append!(libs, String[
                 "libnvrtc",
                 "libnvrtc-builtins",
-		])
-	end
-	if others
+                ])
+        end
+        if others
             append!(libs, String[
-				"libcufft",
+                                "libcufft",
                 "libnvJitLink",
                 "libcudart",
                 "libcublasLt",
                 "libcublas",
                 "libcusolver",
                 "libcusparse",
-		]
-		)
-	end
+                ]
+                )
+        end
         for lib in libs
             san = replace(lib, "-" => "_")
             push!(products,
@@ -986,28 +983,27 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     if gpu == "rocm"
 
+        for lib in (
+            "librccl",
+            "librocm-core",
+            "libamdhip64",
+            "libhiprtc-builtins",
+            "libhiprtc",
+            "librocm_smi64",
+            "librocprofiler-register",
+            #"librocm_sysdeps_numa",
 
-    	for lib in (
-		"librccl",
-		"librocm-core",
-		"libamdhip64",
-		"libhiprtc-builtins",
-		"libhiprtc",
-		"librocm_smi64",
-		"librocprofiler-register",
-		#"librocm_sysdeps_numa",
-
-		"libhipfft",
-		"libhipsolver",
-		"libhipsolver_fortran",
-		"libhsa-runtime64",
-		"librocsolver",
-	)
-	    san = replace(lib, "-" => "_")
-	    push!(products,
+            "libhipfft",
+            "libhipsolver",
+            "libhipsolver_fortran",
+            "libhsa-runtime64",
+            "librocsolver",
+            )
+            san = replace(lib, "-" => "_")
+            push!(products,
                   LibraryProduct([lib, lib], Symbol(san);
                                  dont_dlopen=true, dlopen_flags=[:RTLD_LOCAL]))
-	end
+        end
     end
 
     push!(builds, (;
