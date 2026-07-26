@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "7f48026323cc732754cae4044936adcd9b20cbcd"
+reactant_commit = "5f1f117a51a3898a6971eee1d7aa584c8d40d0fa"
 version = v"0.0.397"
 
 sources = [
@@ -937,8 +937,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                 # "nvshmem_bootstrap_uid",
                 # "nvshmem_transport_ibrc"
         ]
-        cudnn = true
-        nvrtc = true
+        cudnn = VersionNumber(cuda_version) < v"13"
+        nvrtc = VersionNumber(cuda_version) < v"13"
         others = false # VersionNumber(cuda_version) >= v"13"
         if cudnn
         append!(libs, String[
