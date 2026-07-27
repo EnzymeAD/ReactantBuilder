@@ -651,6 +651,30 @@ fi
 
 
 install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
+
+# Post-build sanity check for CUDA builds: nvcc's separate-compilation machinery
+# emits registration symbols (`__cudaRegisterLinkedBinary_<module-id>`,
+# `__fatbinwrap_<module-id>`, ...) that are always resolved within the same
+# shared library; no external library provides them. Any such symbol left
+# undefined means host/target CUDA device-link objects got mixed during the
+# build, and the library will fail to dlopen at load time. This shipped in the
+# broken aarch64 CUDA-13.1 builds of v0.0.394-v0.0.396, see
+# https://github.com/EnzymeAD/Reactant.jl/issues/3112
+if [[ "${bb_full_target}" == *gpu+cuda* ]] && [[ "${target}" == *-linux-* ]]; then
+    # separate `readelf -h` run: a readelf failure inside the pipeline below
+    # would be masked by awk succeeding on empty input
+    readelf -h "${libdir}/libReactantExtra.${dlext}" > /dev/null
+    bad_syms=$(readelf -W --dyn-syms "${libdir}/libReactantExtra.${dlext}" |
+               awk '$7 == "UND" && $8 ~ /^(__cuda|__fatbin|__nv_)/ { print $8 }' |
+               sort -u)
+    if [[ -n "${bad_syms}" ]]; then
+        echo "ERROR: unresolvable nvcc device-link symbols in libReactantExtra.${dlext}:" >&2
+        echo "${bad_syms}" >&2
+        echo "The library would fail to dlopen at load time, refusing to package it." >&2
+        exit 1
+    fi
+fi
+
 install_license ../../LICENSE
 """
 
