@@ -278,6 +278,11 @@ if [[ "${target}" == aarch64-* ]]; then
     BAZEL_BUILD_FLAGS+=(--copt=-march=armv8+aes+sha2)
     BAZEL_BUILD_FLAGS+=(--copt=-DDNNL_ARCH_GENERIC=1)
     BAZEL_BUILD_FLAGS+=(--define=@xla//build_with_mkl_aarch64=true)
+    # ynnpack's FP8 kernels are compiled with -march=...+fp8+fp8dot4 and use
+    # the ARM FP8 ACLE (mfloat8 types, __arm_fpm_init), which GCC only has
+    # from 15 on; our toolchain is older, so leave those kernels out.
+    BAZEL_BUILD_FLAGS+=(--define=ynn_enable_arm64_neonfp8=false)
+    BAZEL_BUILD_FLAGS+=(--define=ynn_enable_arm64_neonfp8dot4=false)
 fi
 
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
