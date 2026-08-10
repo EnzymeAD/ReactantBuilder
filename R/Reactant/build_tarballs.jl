@@ -335,6 +335,14 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         --action_env=ROCM_PATH=$ROCM_PATH
         --repo_env=ROCM_PATH=$ROCM_PATH
 
+        # hipcc_configure (rules_ml_toolchain) assembles the environment it
+        # re-exports to compile actions from these variables; point them at
+        # the TheRock dist prepared above so hipcc finds its clang and the
+        # device bitcode, and so the toolchain's env_entry values are the
+        # real paths rather than empty.
+        --repo_env=HIP_CLANG_PATH=$ROCM_PATH/lib/llvm/bin
+        --repo_env=DEVICE_LIB_PATH=$ROCM_PATH/amdgcn/bitcode
+
         # anything before 942 hits a 128-bit error
         --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
 
