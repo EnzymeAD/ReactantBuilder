@@ -12,9 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         machine:
+          - jll1-service
           - jll1
           - jll2
-          - jll3
           - jll4
           - jll5
           - jll6
