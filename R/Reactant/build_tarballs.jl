@@ -725,6 +725,11 @@ augment_platform_block="""
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
 for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "7.1",), platform in platforms
 
+    # [do not merge] only build CUDA 13.1 artifacts on this branch
+    if !(gpu == "cuda" && cuda_version == "13.1")
+        continue
+    end
+
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
     augmented_platform["gpu"] = gpu
