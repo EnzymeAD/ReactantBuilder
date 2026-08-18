@@ -6,8 +6,8 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
-repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "c66ba7edec40cd7ef15f82c7614cb8e6ae5cc499"
+repo = "https://github.com/simeonschaub/Reactant.jl.git"
+reactant_commit = "066d0f31ba04e684dcc42afc3251ecca1946bde5"
 version = v"0.0.405"
 
 sources = [
