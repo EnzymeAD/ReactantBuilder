@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "cccca042f5d67ec6e9d6b0b51d94752faaa704c5"
-version = v"0.0.397"
+reactant_commit = "c66ba7edec40cd7ef15f82c7614cb8e6ae5cc499"
+version = v"0.0.405"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -278,6 +278,11 @@ if [[ "${target}" == aarch64-* ]]; then
     BAZEL_BUILD_FLAGS+=(--copt=-march=armv8+aes+sha2)
     BAZEL_BUILD_FLAGS+=(--copt=-DDNNL_ARCH_GENERIC=1)
     BAZEL_BUILD_FLAGS+=(--define=@xla//build_with_mkl_aarch64=true)
+    # ynnpack's FP8 kernels are compiled with -march=...+fp8+fp8dot4 and use
+    # the ARM FP8 ACLE (mfloat8 types, __arm_fpm_init), which GCC only has
+    # from 15 on; our toolchain is older, so leave those kernels out.
+    BAZEL_BUILD_FLAGS+=(--define=ynn_enable_arm64_neonfp8=false)
+    BAZEL_BUILD_FLAGS+=(--define=ynn_enable_arm64_neonfp8dot4=false)
 fi
 
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
@@ -334,6 +339,14 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     BAZEL_BUILD_FLAGS+=(
         --action_env=ROCM_PATH=$ROCM_PATH
         --repo_env=ROCM_PATH=$ROCM_PATH
+
+        # hipcc_configure (rules_ml_toolchain) assembles the environment it
+        # re-exports to compile actions from these variables; point them at
+        # the TheRock dist prepared above so hipcc finds its clang and the
+        # device bitcode, and so the toolchain's env_entry values are the
+        # real paths rather than empty.
+        --repo_env=HIP_CLANG_PATH=$ROCM_PATH/lib/llvm/bin
+        --repo_env=DEVICE_LIB_PATH=$ROCM_PATH/amdgcn/bitcode
 
         # anything before 942 hits a 128-bit error
         --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
