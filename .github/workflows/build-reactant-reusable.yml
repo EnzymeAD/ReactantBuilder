@@ -4,9 +4,9 @@ on:
   workflow_call:
     secrets:
       ENZYMEAD_BOT_ID:
-        required: true
+        required: false
       ENZYMEAD_BOT_PRIVATE_KEY:
-        required: true
+        required: false
     inputs:
       julia_version:
         description: 'Julia version'
