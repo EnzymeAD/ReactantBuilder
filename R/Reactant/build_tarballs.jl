@@ -348,8 +348,8 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         --repo_env=HIP_CLANG_PATH=$ROCM_PATH/lib/llvm/bin
         --repo_env=DEVICE_LIB_PATH=$ROCM_PATH/amdgcn/bitcode
 
-    		# anything before 942 hits a 128-bit error
-		    --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1102,gfx1200,gfx1201"
+        # anything before 942 hits a 128-bit error
+        --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1102,gfx1200,gfx1201"
 
         --linkopt="-L$ROCM_PATH/lib/rocm_sysdeps/lib"
 
