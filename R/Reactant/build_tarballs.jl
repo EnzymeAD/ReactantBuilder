@@ -8,7 +8,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 name = "Reactant"
 # sds/sparse_csr branch
 repo = "https://github.com/simeonschaub/Reactant.jl.git"
-reactant_commit = "7fc8bd2676dbafc3edd1d221e4bf392cfc293823"
+reactant_commit = "242fe505fe40d2e3617773c1ee24376a421cda32"
 version = v"0.0.405"
 
 sources = [
@@ -55,7 +55,8 @@ fi
 # Change the repository Enzyme-JAX is downloaded from, to support commits that
 # only exist in a fork.
 if [[ -n "${ENZYME_JAX_REPO}" ]]; then
-   sed -i.bak2 "s,https://github.com/EnzymeAD/Enzyme-JAX,${ENZYME_JAX_REPO},g" WORKSPACE
+   sed -i.bak2 's,ENZYMEXLA_REPO = ".*",ENZYMEXLA_REPO = "'${ENZYME_JAX_REPO}'",' WORKSPACE
+   sed -i.bak3 "s,https://github.com/EnzymeAD/Enzyme-JAX/archive,${ENZYME_JAX_REPO}/archive,g" WORKSPACE
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
