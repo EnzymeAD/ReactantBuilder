@@ -6,8 +6,9 @@ include(joinpath(YGGDRASIL_DIR, "fancy_toys.jl"))
 include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
-repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "c66ba7edec40cd7ef15f82c7614cb8e6ae5cc499"
+# sds/sparse_csr branch
+repo = "https://github.com/simeonschaub/Reactant.jl.git"
+reactant_commit = "12749a6b1d063ecf4c198dd2375e7bf6d10bd0f1"
 version = v"0.0.405"
 
 sources = [
@@ -17,7 +18,11 @@ sources = [
 ]
 
 # When we run CI in Enzyme-JAX repository we need to be able to change the commit to check out.
-enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "")
+enzyme_jax_ci = haskey(ENV, "ENZYME_JAX_COMMIT")
+# By default build against the sds/sparse_csr branch of Enzyme-JAX (adds the
+# enzymexla.sparse.spmm op and the lower-sparse-csr pass).
+enzyme_jax_commit = get(ENV, "ENZYME_JAX_COMMIT", "64575e1fe6d9a11e1ddf92bf126a44f8efc6a28c")
+enzyme_jax_repo = get(ENV, "ENZYME_JAX_REPO", "https://github.com/simeonschaub/Enzyme-JAX")
 
 # Bash recipe for building across all platforms
 script = raw"""
@@ -42,9 +47,16 @@ echo GCC version: $(gcc --version)
 GCC_VERSION=$(gcc --version | head -1 | awk '{ print $3 }')
 GCC_MAJOR_VERSION=$(echo "${GCC_VERSION}" | cut -d. -f1)
 
-# Change Enzyme-JAX commit, necessary in CI of that repository.
+# Change Enzyme-JAX commit, necessary in CI of that repository and to build
+# from development branches.
 if [[ -n "${ENZYME_JAX_COMMIT}" ]]; then
    sed -i.bak 's/ENZYMEXLA_COMMIT = ".*"/ENZYMEXLA_COMMIT = "'${ENZYME_JAX_COMMIT}'"/' WORKSPACE
+fi
+# Change the repository Enzyme-JAX is downloaded from, to support commits that
+# only exist in a fork.
+if [[ -n "${ENZYME_JAX_REPO}" ]]; then
+   sed -i.bak2 's,ENZYMEXLA_REPO = ".*",ENZYMEXLA_REPO = "'${ENZYME_JAX_REPO}'",' WORKSPACE
+   sed -i.bak3 "s,https://github.com/EnzymeAD/Enzyme-JAX/archive,${ENZYME_JAX_REPO}/archive,g" WORKSPACE
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
@@ -692,8 +704,9 @@ platforms = filter(p -> arch(p) != "i686", platforms)
 # No riscv for now
 platforms = filter(p -> arch(p) != "riscv64", platforms)
 
-# linux aarch has onednn issues
-# platforms = filter(p -> !(arch(p) == "aarch64" && Sys.islinux(p)), platforms)
+# No aarch64 builds on this branch
+platforms = filter(p -> arch(p) != "aarch64", platforms)
+
 platforms = filter(p -> !(arch(p) == "armv6l" && Sys.islinux(p)), platforms)
 platforms = filter(p -> !(arch(p) == "armv7l" && Sys.islinux(p)), platforms)
 
@@ -724,6 +737,11 @@ augment_platform_block="""
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
 for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "7.1",), platform in platforms
+
+    # [do not merge] only build CUDA 13.1 artifacts on this branch
+    if !(gpu == "cuda" && cuda_version == "13.1")
+        continue
+    end
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -795,7 +813,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     end
 
     # When we're running CI for Enzyme-JAX, only build few platforms
-    if !isempty(enzyme_jax_commit)
+    if enzyme_jax_ci
         if !(gpu == "rocm" || (Sys.islinux(platform) && gpu == "cuda") || (Sys.isapple(platform) && mode == "opt") || (Sys.iswindows(platform)))
             continue
         end
@@ -835,6 +853,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     USE_CCACHE=$(!BinaryBuilder.is_yggdrasil())
     USE_GCPCACHE=$(get(ENV, "GITHUB_ACTIONS", "false") == "true" && startswith(get(ENV, "RUNNER_NAME", ""), "jll"))
     ENZYME_JAX_COMMIT=$(enzyme_jax_commit)
+    ENZYME_JAX_REPO=$(enzyme_jax_repo)
     HERMETIC_ROCM_VERSION=$(hermetic_rocm_version_map[rocm_version])
     """
     platform_sources = BinaryBuilder.AbstractSource[sources...]
@@ -1040,8 +1059,8 @@ for (i,build) in enumerate(builds)
                    compression_format="xz",
                    # We use GCC 13, so we can't dlopen the library during audit
                    augment_platform_block, lazy_artifacts=true, lock_microarchitecture=false, dont_dlopen=true,
-                   # When we're running CI for Enzyme-JAX (i.e. when the commit is
-                   # non-empty), don't run the audit to save time, we don't need it.
-                   skip_audit=!isempty(enzyme_jax_commit),
+                   # When we're running CI for Enzyme-JAX, don't run the audit to
+                   # save time, we don't need it.
+                   skip_audit=enzyme_jax_ci,
                    )
 end
