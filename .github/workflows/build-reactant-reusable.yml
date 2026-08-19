@@ -4,9 +4,9 @@ on:
   workflow_call:
     secrets:
       ENZYMEAD_BOT_ID:
-        required: true
+        required: false
       ENZYMEAD_BOT_PRIVATE_KEY:
-        required: true
+        required: false
     inputs:
       julia_version:
         description: 'Julia version'
@@ -74,11 +74,11 @@ jobs:
           if [[ -f ./clean_products.sh ]]; then
               sudo ./clean_products.sh
           fi
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
@@ -170,11 +170,11 @@ jobs:
           if [[ -f ./clean_products.sh ]]; then
               sudo ./clean_products.sh
           fi
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '${{ inputs.julia_version }}'
       # - name: Load Julia packages from cache
@@ -220,10 +220,17 @@ jobs:
       image: 'ghcr.io/enzymead/reactant-docker-images@sha256:cd45d851f5ea544f88d042eafefa53d948c229fffcab6189019324e3b02b505a'
     timeout-minutes: 5
     needs: build-platforms
+    if: ${{ always() }}
     steps:
-      - name: Success
+      - name: Check build results
+        shell: bash
         run: |
-          echo 'Success'
+          echo "build-platforms result: ${{ needs.build-platforms.result }}"
+          if [[ "${{ needs.build-platforms.result }}" == "success" ]]; then
+              exit 0
+          else
+              exit 1
+          fi
 
   register:
     name: Register
@@ -246,7 +253,7 @@ jobs:
             Reactant_jll.jl
             ReactantBuilder
             General
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: 'EnzymeAD/ReactantBuilder'
           ref: ${{ inputs.reactantbuilder_ref == '' && github.sha || inputs.reactantbuilder_ref }}
@@ -264,7 +271,7 @@ jobs:
           PRODUCTS_DIR=${{ inputs.build_project }}/products
           mkdir -p "${PRODUCTS_DIR}"
           echo "PRODUCTS_DIR=${PRODUCTS_DIR}" >> "${GITHUB_ENV}"
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '${{ inputs.julia_version }}'
       - name: Load Julia packages from cache
