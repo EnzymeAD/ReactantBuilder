@@ -8,7 +8,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 name = "Reactant"
 # sds/sparse_csr branch
 repo = "https://github.com/simeonschaub/Reactant.jl.git"
-reactant_commit = "839868b5067a94d0242dfd89d5143d5dd1375801"
+reactant_commit = "7fc8bd2676dbafc3edd1d221e4bf392cfc293823"
 version = v"0.0.405"
 
 sources = [
