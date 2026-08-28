@@ -474,6 +474,32 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     install -Dvm 755 "${NVCC_DIR[@]}/bin/ptxas" -t "${libdir}/cuda/bin"
     install -Dvm 755 "${NVCC_DIR[@]}/bin/fatbinary" -t "${libdir}/cuda/bin"
 
+    # cuDNN's runtime-compiled engines (fused attention / SDPA, runtime fusion) JIT their
+    # kernels with NVRTC when they build an execution plan. They do not go through the
+    # NVRTC that is linked statically into libReactantExtra.so; cuDNN's loader wants a
+    # *shared* libnvrtc, which it dlopens from CUDNN_NVRTC_OVERRIDE_PATH. Ship the one
+    # from the same CUDA redistributable the rest of this bundle comes from, so Reactant
+    # can point cuDNN at it without depending on a CUDA toolkit outside the JLL.
+    # `cuda_nvrtc` is not a runtime dependency of libReactantExtra.so -- nothing links
+    # against the shared NVRTC -- so unlike `cuda_nvcc` it does not appear in the runfiles
+    # tree. Take it from the hermetic repository bazel fetched it into.
+    if compgen -G "${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib/libnvrtc.so.*" > /dev/null; then
+        NVRTC_DIR=(${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib)
+    elif compgen -G "bazel-bin/libReactantExtra.so.runfiles/cuda_nvrtc/lib/libnvrtc.so.*" > /dev/null; then
+        NVRTC_DIR=(bazel-bin/libReactantExtra.so.runfiles/cuda_nvrtc/lib)
+    else
+        NVRTC_DIR=(/workspace/srcdir/cuda_nvrtc-linux-*-archive/lib)
+    fi
+    if compgen -G "${NVRTC_DIR[@]}/libnvrtc.so.*" > /dev/null; then
+        # `cp -P` rather than `install`: keep the `libnvrtc.so.13 -> libnvrtc.so.13.x.y`
+        # symlink instead of shipping a second ~110 MB copy of the library.
+        mkdir -p "${libdir}/cuda/lib"
+        cp -Pv "${NVRTC_DIR[@]}"/libnvrtc.so.* "${NVRTC_DIR[@]}"/libnvrtc-builtins.so.* "${libdir}/cuda/lib/"
+    else
+        echo "WARNING: no shared libnvrtc found, cuDNN's runtime-compiled engines will be unavailable"
+        ls -la bazel-bin/libReactantExtra.so.runfiles/ || true
+    fi
+
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
     patchelf --set-rpath '$ORIGIN' bazel-bin/libReactantExtra.so
