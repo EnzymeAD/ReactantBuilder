@@ -475,14 +475,7 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     install -Dvm 755 "${NVCC_DIR[@]}/bin/fatbinary" -t "${libdir}/cuda/bin"
 
     # cuDNN's runtime-compiled engines (fused attention / SDPA, runtime fusion) JIT their
-    # kernels with NVRTC when they build an execution plan. They do not go through the
-    # NVRTC that is linked statically into libReactantExtra.so; cuDNN's loader wants a
-    # *shared* libnvrtc, which it dlopens from CUDNN_NVRTC_OVERRIDE_PATH. Ship the one
-    # from the same CUDA redistributable the rest of this bundle comes from, so Reactant
-    # can point cuDNN at it without depending on a CUDA toolkit outside the JLL.
-    # `cuda_nvrtc` is not a runtime dependency of libReactantExtra.so -- nothing links
-    # against the shared NVRTC -- so unlike `cuda_nvcc` it does not appear in the runfiles
-    # tree. Take it from the hermetic repository bazel fetched it into.
+    # kernels with NVRTC when they build an execution plan.
     if compgen -G "${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib/libnvrtc.so.*" > /dev/null; then
         NVRTC_DIR=(${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib)
     elif compgen -G "bazel-bin/libReactantExtra.so.runfiles/cuda_nvrtc/lib/libnvrtc.so.*" > /dev/null; then
