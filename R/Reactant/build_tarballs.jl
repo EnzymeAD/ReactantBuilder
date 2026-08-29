@@ -31,8 +31,8 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     fi
 fi
 
-export JAVA_HOME="${PWD}/jdk-21.0.7+6"
-export BAZEL="${PWD}/bin/bazel"
+export JAVA_HOME="${WORKSPACE}/srcdir/jdk-21.0.7+6"
+export BAZEL="${WORKSPACE}/srcdir/bin/bazel"
 
 cd Reactant.jl/deps/ReactantExtra
 
