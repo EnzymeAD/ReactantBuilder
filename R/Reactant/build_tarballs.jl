@@ -476,21 +476,22 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
 
     # cuDNN's runtime-compiled engines (fused attention / SDPA, runtime fusion) JIT their
     # kernels with NVRTC when they build an execution plan.
-    if compgen -G "${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib/libnvrtc.so.*" > /dev/null; then
-        NVRTC_DIR=(${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib)
-    elif compgen -G "bazel-bin/libReactantExtra.so.runfiles/cuda_nvrtc/lib/libnvrtc.so.*" > /dev/null; then
-        NVRTC_DIR=(bazel-bin/libReactantExtra.so.runfiles/cuda_nvrtc/lib)
+    # Like cuda_nvcc above, the hermetic cuda_nvrtc repository holds host binaries, so it
+    # only serves the x86_64 bundle; aarch64 would need the linux-sbsa redistributable
+    # added to `sources` first.
+    if [[ "${target}" == x86_64-linux-gnu ]]; then
+        NVRTC_LIBS=(${WORKSPACE}/bazel_root/*/external/cuda_nvrtc/lib/libnvrtc.so.*)
     else
-        NVRTC_DIR=(/workspace/srcdir/cuda_nvrtc-linux-*-archive/lib)
+        NVRTC_LIBS=(/workspace/srcdir/cuda_nvrtc-linux-sbsa-*-archive/lib/libnvrtc.so.*)
     fi
-    if compgen -G "${NVRTC_DIR[@]}/libnvrtc.so.*" > /dev/null; then
+    if [[ -e "${NVRTC_LIBS[0]}" ]]; then
         # `cp -P` rather than `install`: keep the `libnvrtc.so.13 -> libnvrtc.so.13.x.y`
         # symlink instead of shipping a second ~110 MB copy of the library.
+        NVRTC_DIR="$(dirname "${NVRTC_LIBS[0]}")"
         mkdir -p "${libdir}/cuda/lib"
-        cp -Pv "${NVRTC_DIR[@]}"/libnvrtc.so.* "${NVRTC_DIR[@]}"/libnvrtc-builtins.so.* "${libdir}/cuda/lib/"
+        cp -Pv "${NVRTC_DIR}"/libnvrtc.so.* "${NVRTC_DIR}"/libnvrtc-builtins.so.* "${libdir}/cuda/lib/"
     else
         echo "WARNING: no shared libnvrtc found, cuDNN's runtime-compiled engines will be unavailable"
-        ls -la bazel-bin/libReactantExtra.so.runfiles/ || true
     fi
 
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
