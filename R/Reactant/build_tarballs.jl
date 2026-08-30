@@ -44,7 +44,13 @@ GCC_MAJOR_VERSION=$(echo "${GCC_VERSION}" | cut -d. -f1)
 
 # Change Enzyme-JAX commit, necessary in CI of that repository.
 if [[ -n "${ENZYME_JAX_COMMIT}" ]]; then
-   sed -i.bak 's/ENZYMEXLA_COMMIT = ".*"/ENZYMEXLA_COMMIT = "'${ENZYME_JAX_COMMIT}'"/' WORKSPACE
+   if command -v curl >/dev/null 2>&1; then
+       # Also refreshes the copy of Enzyme-JAX's xla_deps.MODULE.bazel.
+       ./set_enzyme_jax_commit.sh "${ENZYME_JAX_COMMIT}"
+   else
+       echo "curl not available, keeping the committed xla_deps.MODULE.bazel" >&2
+       sed -i.bak 's/^ENZYMEXLA_COMMIT = ".*"/ENZYMEXLA_COMMIT = "'${ENZYME_JAX_COMMIT}'"/' MODULE.bazel
+   fi
 fi
 
 if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
@@ -82,7 +88,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,vrun ,PRE_FLAGS+=( -L$ROCM_PATH/lib ); vrun ,g" `which clang++`
     cp `which clang` $ROCM_PATH/bin/hipcc
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
-    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include,g" $ROCM_PATH/bin/hipcc
+    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/xla++rocm_configure_ext+local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/xla++rocm_configure_ext+local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
@@ -191,7 +197,7 @@ elif [[ "${target}" == aarch64-mingw32* ]]; then
    BAZEL_CPU=arm64_windows
 fi
 
-echo "register_toolchains(\\"//:cc_toolchain_for_ygg_host\\")" >> WORKSPACE
+echo "register_toolchains(\\"//:cc_toolchain_for_ygg_host\\")" >> MODULE.bazel
 
 if [[ "${target}" == *-darwin* ]]; then
     BAZEL_BUILD_FLAGS+=(--config=macos)
@@ -215,11 +221,11 @@ if [[ "${target}" == *-darwin* ]]; then
     if [[ "${target}" == x86_64* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:darwin_x86_64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
-        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_darwin_x86\\")" >> WORKSPACE
+        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_darwin_x86\\")" >> MODULE.bazel
     elif [[ "${target}" == aarch64-* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:darwin_arm64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
-        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_darwin_arm64\\")" >> WORKSPACE
+        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_darwin_arm64\\")" >> MODULE.bazel
     fi
     BAZEL_BUILD_FLAGS+=(--linkopt=-twolevel_namespace)
     BAZEL_BUILD_FLAGS+=(--define=clang_macos_x86_64=true)
@@ -246,11 +252,11 @@ if [[ "${target}" == *-mingw* ]]; then
     if [[ "${target}" == x86_64* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:win_x86_64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
-        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_win_x86\\")" >> WORKSPACE
+        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_win_x86\\")" >> MODULE.bazel
     elif [[ "${target}" == aarch64-* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:win_arm64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
-        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_win_arm64\\")" >> WORKSPACE
+        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_win_arm64\\")" >> MODULE.bazel
     fi
 fi
 
@@ -265,12 +271,12 @@ if [[ "${target}" == *-linux-* ]]; then
 
     if [[ "${target}" == x86_64-* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:linux_x86_64)
-        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_x86\\")" >> WORKSPACE
+        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_x86\\")" >> MODULE.bazel
     elif [[ "${target}" == aarch64-* ]]; then
         BAZEL_BUILD_FLAGS+=(--platforms=@//:linux_aarch64)
         BAZEL_BUILD_FLAGS+=(--cpu=${BAZEL_CPU})
         BAZEL_BUILD_FLAGS+=(--@xla//xla/tsl/framework/contraction:disable_onednn_contraction_kernel=True)
-        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_aarch64\\")" >> WORKSPACE
+        echo "register_toolchains(\\"//:cc_toolchain_for_ygg_aarch64\\")" >> MODULE.bazel
     fi
 fi
 
