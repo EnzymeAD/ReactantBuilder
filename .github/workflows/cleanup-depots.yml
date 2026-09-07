@@ -3,7 +3,7 @@ name: "Cleanup local depots"
 on:
   workflow_dispatch:
   schedule:
-    - cron: 5 4 3 * *
+    - cron: 5 4 3,17 * *
 
 jobs:
   cleanup:
