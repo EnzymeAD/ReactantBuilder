@@ -428,6 +428,7 @@ elif [[ "${target}" == *mingw32* ]]; then
     echo "-lshcore" >> bazel-bin/libReactantExtra.so-2.params
     echo "-lcrypt32" >> bazel-bin/libReactantExtra.so-2.params
     echo "-lbcrypt" >> bazel-bin/libReactantExtra.so-2.params
+    echo "-lsecur32" >> bazel-bin/libReactantExtra.so-2.params
     echo "-lmsvcrt" >> bazel-bin/libReactantExtra.so-2.params
     echo "-luuid" >> bazel-bin/libReactantExtra.so-2.params
 
