@@ -191,6 +191,8 @@ jobs:
               echo 'Changing Reactant commit to ${{ inputs.reactant_commit }}...'
               sed -i 's/reactant_commit = ".*"/reactant_commit = "'${{ inputs.reactant_commit }}'"/' R/Reactant/build_tarballs.jl
           fi
+      - name: Setup upterm session
+        uses: owenthereal/action-upterm@v1
       - name: Build Reactant
         timeout-minutes: 120
         run: |
