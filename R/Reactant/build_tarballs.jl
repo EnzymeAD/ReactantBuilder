@@ -58,15 +58,21 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     # https://github.com/ROCm/TheRock/blob/main/docs/development/windows_support.md#lld-link-error-duplicate-symbol
     export USE_CCACHE=false
 
-    mv $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442
-    rm $ROCM_PATH/lib/libhiprtc-builtins.so.7
-    ln -s $ROCM_PATH/lib/libhiprtc-builtins.so.7.1.25442 $ROCM_PATH/lib/libhiprtc-builtins.so.7
-    mv $ROCM_PATH/lib/libhiprtc.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libhiprtc.so.7.1.25442
-    rm $ROCM_PATH/lib/libhiprtc.so.7
-    ln -s $ROCM_PATH/lib/libhiprtc.so.7.1.25442 $ROCM_PATH/lib/libhiprtc.so.7
-    mv $ROCM_PATH/lib/libamdhip64.so.7.1.25442-19ae9ff849 $ROCM_PATH/lib/libamdhip64.so.7.1.25442
-    rm $ROCM_PATH/lib/libamdhip64.so.7
-    ln -s $ROCM_PATH/lib/libamdhip64.so.7.1.25442 $ROCM_PATH/lib/libamdhip64.so.7
+    # Drop the build suffix TheRock puts after the version (`.so.7.15.26333-0000000`).
+    for lib in libhiprtc-builtins libhiprtc libamdhip64; do
+        for versioned in $ROCM_PATH/lib/${lib}.so.*-*; do
+            mv ${versioned} ${versioned%-*}
+            ln -sf ${versioned%-*} $ROCM_PATH/lib/${lib}.so.7
+        done
+    done
+    ROCM_CLANG_VERSION=$(ls $ROCM_PATH/lib/llvm/lib/clang)
+    # Enzyme-JAX's patch to XLA's ROCm crosstool hardcodes the clang resource
+    # directory as lib/llvm/lib/clang/22/include, so alias that version to this
+    # toolchain's clang and spell hipcc's include paths through the alias.
+    XLA_CLANG_VERSION=22
+    if [[ "${ROCM_CLANG_VERSION}" != "${XLA_CLANG_VERSION}" ]]; then
+        ln -s ${ROCM_CLANG_VERSION} $ROCM_PATH/lib/llvm/lib/clang/${XLA_CLANG_VERSION}
+    fi
 
     ln -s $ROCM_PATH/lib/llvm/amdgcn $ROCM_PATH/amdgcn
     mv $ROCM_PATH/bin/hipcc{,.real}
@@ -82,7 +88,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,vrun ,PRE_FLAGS+=( -L$ROCM_PATH/lib ); vrun ,g" `which clang++`
     cp `which clang` $ROCM_PATH/bin/hipcc
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
-    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/22/include,g" $ROCM_PATH/bin/hipcc
+    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/${XLA_CLANG_VERSION}/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/${XLA_CLANG_VERSION}/include,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
@@ -94,7 +100,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     #include_next <type_traits>
     #pragma clang force_cuda_host_device end
     #endif // __CLANG_CUDA_WRAPPERS_TYPE_TRAITS
-    " > /workspace/srcdir/lib/llvm/lib/clang/22/include/cuda_wrappers/type_traits
+    " > /workspace/srcdir/lib/llvm/lib/clang/${ROCM_CLANG_VERSION}/include/cuda_wrappers/type_traits
 
     echo "#ifndef __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
     #define __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
@@ -102,7 +108,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     #include_next <bits/move.h>
     #pragma clang force_cuda_host_device end
     #endif // __CLANG_CUDA_WRAPPERS_BITS_MOVE_H
-    " > /workspace/srcdir/lib/llvm/lib/clang/22/include/cuda_wrappers/bits/move.h
+    " > /workspace/srcdir/lib/llvm/lib/clang/${ROCM_CLANG_VERSION}/include/cuda_wrappers/bits/move.h
 fi
 
 mkdir -p .local/bin
@@ -600,15 +606,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         -t ${libdir}
 
     install -Dvm 755 \
-        $ROCM_PATH/lib/libhipsolver_fortran.so* \
-        -t ${libdir}
-
-    install -Dvm 755 \
         $ROCM_PATH/lib/libhipsolver.so* \
-        -t ${libdir}
-
-    install -Dvm 755 \
-        $ROCM_PATH/lib/libamd_comgr_loader.so* \
         -t ${libdir}
 
     install -Dvm 755 \
@@ -724,7 +722,7 @@ augment_platform_block="""
     """
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
-for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "7.1",), platform in platforms
+for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "10.0",), platform in platforms
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -826,7 +824,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         "none" => "none",
         "6.4" => "6.4.1",
         "6.5" => "6.5.1",
-        "7.1" => "7.1.0",
+        "10.0" => "10.0.0",
     )
 
     prefix="""
@@ -928,10 +926,11 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                   FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.5.0rc20250610.tar.gz",
                                 "113e44dcd7868ffab92193bbcb8653a374494f0c5b393545f08551ea835a1ee5")
                   )
-               elseif rocm_version == "7.1"
+               elseif rocm_version == "10.0"
+               # The ROCm XLA builds against (third_party/gpus/rocm/rocm_redist.bzl).
                push!(platform_sources,
-                  FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx120X-all-7.10.0a20251103.tar.gz",
-                                "3cffe4ced6ba1defa526cb7b9d3cbad48791842d585eae48e614835355d9fd8b")
+                  FileSource("https://stable.repo.amd.com/rocm/core/tarball/therock-dist-linux-multiarch-10.0.0.tar.gz",
+                                "1c5e807875d26a2470ecc7323daa5b5b9009208a55c3290ac255a909cde15fc6")
                   )
                end
         end
@@ -1009,7 +1008,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
             "libhipfft",
             "libhipsolver",
-            "libhipsolver_fortran",
             "libhsa-runtime64",
             "librocsolver",
             )
