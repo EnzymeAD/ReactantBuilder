@@ -379,6 +379,17 @@ sed -i -e "s/BB_TARGET/${bb_target}/g" \
        -e "s/BAZEL_CPU/${BAZEL_CPU}/g" \
        BUILD
 
+# Host tools built during the build (mlir-tblgen, mlir-linalg-ods-yaml-gen, ...)
+# are compiled against the libstdc++ headers of the host GCC, but run against
+# the first libstdc++ the loader finds, an older one that lacks symbols those
+# headers use (`std::__throw_bad_array_new_length`). Put the host GCC's own
+# libstdc++ first, as Yggdrasil's Enzyme recipe does for enzyme-tblgen. Actions
+# that run a host tool for the target configuration (`run_binary`, genrules)
+# take `--action_env`, those in the exec configuration `--host_action_env`.
+HOST_LD_LIBRARY_PATH="/opt/x86_64-linux-musl/x86_64-linux-musl/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+BAZEL_BUILD_FLAGS+=(--action_env=LD_LIBRARY_PATH=${HOST_LD_LIBRARY_PATH})
+BAZEL_BUILD_FLAGS+=(--host_action_env=LD_LIBRARY_PATH=${HOST_LD_LIBRARY_PATH})
+
 export HERMETIC_PYTHON_VERSION=3.12
 
 $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]}
