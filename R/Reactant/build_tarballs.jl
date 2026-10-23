@@ -475,6 +475,14 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     rm -rf bazel-bin/_solib_local/*stub*/*so*
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
 
+    # cuDNN dlopens `libcudnn_engines_tensor_ir` itself, so it isn't linked and doesn't
+    # end up in `_solib_local`: copy it next to the other cuDNN libraries when cuDNN is
+    # dynamically linked. See https://github.com/google-ml-infra/rules_ml_toolchain/pull/292
+    TENSOR_IR=(/workspace/bazel_root/*/external/cuda_cudnn/lib/libcudnn_engines_tensor_ir.so.9)
+    if [ -f "${libdir}/libcudnn_graph.so.9" ] && [ -f "${TENSOR_IR[0]}" ]; then
+        cp -vL "${TENSOR_IR[0]}" ${libdir}
+    fi
+
     # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     if [[ "${target}" == x86_64-linux-gnu ]]; then
         NVCC_DIR=(bazel-bin/libReactantExtra.so.runfiles/cuda_nvcc)
@@ -973,6 +981,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                 "libcudnn_ops",
                 "libcudnn_graph",
                 "libcudnn_engines_runtime_compiled",
+                "libcudnn_engines_tensor_ir",
                 ])
         end
         if nvrtc
