@@ -477,7 +477,7 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
 
     # XLA loads the CUDA runtime through its dlopen stub, so it isn't linked and doesn't
     # end up in `_solib_local`: copy it next to `libReactantExtra.so`.
-    CUDART=(/workspace/bazel_root/*/external/cuda_cudart/lib/libcudart.so.[0-9]*)
+    CUDART=(${WORKSPACE}/bazel_root/*/external/cuda_cudart/lib/libcudart.so.[0-9]*)
     cp -vL "${CUDART[0]}" ${libdir}
 
     # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
