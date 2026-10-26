@@ -475,6 +475,11 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     rm -rf bazel-bin/_solib_local/*stub*/*so*
     cp -v bazel-bin/_solib_local/*/*so* ${libdir}
 
+    # XLA loads the CUDA runtime through its dlopen stub, so it isn't linked and doesn't
+    # end up in `_solib_local`: copy it next to `libReactantExtra.so`.
+    CUDART=(/workspace/bazel_root/*/external/cuda_cudart/lib/libcudart.so.[0-9]*)
+    cp -vL "${CUDART[0]}" ${libdir}
+
     # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     if [[ "${target}" == x86_64-linux-gnu ]]; then
         NVCC_DIR=(bazel-bin/libReactantExtra.so.runfiles/cuda_nvcc)
@@ -955,6 +960,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     if gpu == "cuda"
         libs = String[
                 "libnccl",
+                "libcudart",
                 # "libcuda",
                 # "libnvshmem_host",
                 # "nvshmem_bootstrap_uid",
@@ -985,7 +991,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
             append!(libs, String[
                                 "libcufft",
                 "libnvJitLink",
-                "libcudart",
                 "libcublasLt",
                 "libcublas",
                 "libcusolver",
