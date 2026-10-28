@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "f4fac24ef5e2261b5d682d35e9cb0d1cedc807b8"
+reactant_commit = "f085b21e05182a666b637d7ed39a231a5144ac4b"
 version = v"0.0.435"
 
 sources = [
@@ -963,6 +963,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     if gpu == "cuda"
         libs = String[
                 "libnccl",
+                # ReactantExtra links the shared cudart, see `deps/ReactantExtra/cuda_cudart.BUILD.tpl`
+                "libcudart",
                 # "libcuda",
                 # "libnvshmem_host",
                 # "nvshmem_bootstrap_uid",
@@ -994,7 +996,6 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
             append!(libs, String[
                                 "libcufft",
                 "libnvJitLink",
-                "libcudart",
                 "libcublasLt",
                 "libcublas",
                 "libcusolver",
