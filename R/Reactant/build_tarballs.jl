@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "a21774c407c71325f9d15036cbf8aa6c66f9beb4"
+reactant_commit = "f916182ac2c1bd5cb363c9c1f1be5f5b768b5b64"
 version = v"0.0.435"
 
 sources = [
@@ -963,7 +963,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
     if gpu == "cuda"
         libs = String[
                 "libnccl",
-                # ReactantExtra links the shared cudart (XLA patch in `deps/ReactantExtra/WORKSPACE`)
+                # ReactantExtra links the shared cudart (XLA patch in Enzyme-JAX `workspace.bzl`)
                 "libcudart",
                 # "libcuda",
                 # "libnvshmem_host",
