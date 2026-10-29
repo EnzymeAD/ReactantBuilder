@@ -122,6 +122,17 @@ function amdDriverInitialized()::Bool
         end
     end
 
+    # WSL2 has no amdgpu module: the GPU is reached through /dev/dxg and
+    # ROCm's rocdxg backend, so look for a ROCm install instead.
+    if ispath("/dev/dxg")
+        rocm_path = get(ENV, "ROCM_PATH", "/opt/rocm")
+        if isfile(joinpath(rocm_path, "lib", "libamdhip64.so")) ||
+           Libdl.find_library(["libamdhip64.so.7", "libamdhip64.so"]) != ""
+            @debug "Detected ROCm under WSL2"
+            return true
+        end
+    end
+
     # If the directory doesn't exist, the driver isn't available.
     return false
 end

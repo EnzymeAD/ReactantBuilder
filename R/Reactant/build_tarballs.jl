@@ -669,6 +669,38 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         $ROCM_PATH/lib/llvm/lib/libLLVM.so*git \
        -t ${libdir}/llvm/lib
 
+    # libamd_comgr needs clang too, libamdhip64 needs rocm_kpack, hipblaslt
+    # needs origami, amd_smi needs the netlink sysdeps, and the HSA runtime
+    # loads rocdxg on WSL2. Without them the artifact only loads with a
+    # system ROCm on LD_LIBRARY_PATH (Reactant.jl#2072).
+    install -Dvm 755 \
+        $ROCM_PATH/lib/llvm/lib/libclang-cpp.so*git \
+       -t ${libdir}/llvm/lib
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/librocm_kpack.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/liborigami.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/librocdxg.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_mnl.so* \
+        -t ${libdir}/rocm_sysdeps/lib
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_nl_3.so* \
+        -t ${libdir}/rocm_sysdeps/lib
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_nl_genl_3.so* \
+        -t ${libdir}/rocm_sysdeps/lib
+
      install -Dvm 755 \
         $ROCM_PATH/lib/llvm/amdgcn/bitcode/* \
        -t ${libdir}/llvm/amdgcn/bitcode
