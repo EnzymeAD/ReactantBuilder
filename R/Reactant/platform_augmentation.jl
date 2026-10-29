@@ -30,7 +30,7 @@ else
 end
 
 const gpu_version_preference = if haskey(preferences, "gpu_version")
-    expected = ("none", "12.9", "13.1", "10.0")
+    expected = ("none", "12.9", "13.1", "10.2")
     if isa(preferences["gpu_version"], String) && preferences["gpu_version"] in expected
         preferences["gpu_version"]
     else
@@ -122,6 +122,17 @@ function amdDriverInitialized()::Bool
         end
     end
 
+    # WSL2 has no amdgpu module: the GPU is reached through /dev/dxg and
+    # ROCm's rocdxg backend, so look for a ROCm install instead.
+    if ispath("/dev/dxg")
+        rocm_path = get(ENV, "ROCM_PATH", "/opt/rocm")
+        if isfile(joinpath(rocm_path, "lib", "libamdhip64.so")) ||
+           Libdl.find_library(["libamdhip64.so.7", "libamdhip64.so"]) != ""
+            @debug "Detected ROCm under WSL2"
+            return true
+        end
+    end
+
     # If the directory doesn't exist, the driver isn't available.
     return false
 end
@@ -188,7 +199,7 @@ function augment_platform!(platform::Platform)
             #handle = Libdl.dlopen(roname)
             #path = Libdl.dlpath(handle)
             #Libdl.dlclose(handle)
-	    gpu_version_tag = "10.0"
+	    gpu_version_tag = "10.2"
 
             #@debug "Adding include dependency on $(path)"
             #Base.include_dependency(path)

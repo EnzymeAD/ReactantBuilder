@@ -7,8 +7,8 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "6ad850aa45e71cb5566627fce601e6eaabb45a93"
-version = v"0.0.435"
+reactant_commit = "98b0a4ebf8c9aea2a770ace0c8a563f908ddb008"
+version = v"0.0.436"
 
 sources = [
    GitSource(repo, reactant_commit),
@@ -568,10 +568,6 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         -t ${libdir}
 
     install -Dvm 755 \
-        $ROCM_PATH/lib/librocm_smi64.so* \
-        -t ${libdir}
-
-    install -Dvm 755 \
         $ROCM_PATH/lib/librocprofiler-register.so* \
         -t ${libdir}
 
@@ -665,9 +661,38 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
 
 
-     install -Dvm 755 \
-        $ROCM_PATH/lib/llvm/lib/libLLVM.so*git \
-       -t ${libdir}/llvm/lib
+    # Since ROCm 10.2 libamd_comgr links LLVM/Clang statically and hides them
+    # behind its version script (ROCm/TheRock#3731, ROCm/llvm-project#2389),
+    # so lib/llvm/lib/libLLVM.so and libclang-cpp.so are not bundled: they
+    # would only interpose on the LLVM linked into libReactantExtra.
+    #
+    # libamdhip64 needs rocm_kpack, hipblaslt needs origami, amd_smi needs
+    # the netlink sysdeps, and the HSA runtime loads rocdxg on WSL2. Without
+    # them the artifact only loads with a system ROCm on LD_LIBRARY_PATH
+    # (Reactant.jl#2072).
+    install -Dvm 755 \
+        $ROCM_PATH/lib/librocm_kpack.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/liborigami.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/librocdxg.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_mnl.so* \
+        -t ${libdir}/rocm_sysdeps/lib
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_nl_3.so* \
+        -t ${libdir}/rocm_sysdeps/lib
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/rocm_sysdeps/lib/librocm_sysdeps_nl_genl_3.so* \
+        -t ${libdir}/rocm_sysdeps/lib
 
      install -Dvm 755 \
         $ROCM_PATH/lib/llvm/amdgcn/bitcode/* \
@@ -740,7 +765,7 @@ augment_platform_block="""
     """
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
-for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "10.0",), platform in platforms
+for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "10.2",), platform in platforms
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -843,6 +868,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         "6.4" => "6.4.1",
         "6.5" => "6.5.1",
         "10.0" => "10.0.0",
+        "10.2" => "10.2.0",
     )
 
     prefix="""
@@ -944,11 +970,14 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                   FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.5.0rc20250610.tar.gz",
                                 "113e44dcd7868ffab92193bbcb8653a374494f0c5b393545f08551ea835a1ee5")
                   )
-               elseif rocm_version == "10.0"
-               # The ROCm XLA builds against (third_party/gpus/rocm/rocm_redist.bzl).
+               elseif rocm_version == "10.2"
+               # XLA builds against 10.0.0 (third_party/gpus/rocm/rocm_redist.bzl);
+               # 10.2 is the first release whose libamd_comgr links LLVM statically
+               # instead of pulling in lib/llvm/lib/libLLVM.so next to the LLVM in
+               # libReactantExtra (ROCm/TheRock#3731, ROCm/llvm-project#2389).
                push!(platform_sources,
-                  FileSource("https://stable.repo.amd.com/rocm/core/tarball/therock-dist-linux-multiarch-10.0.0.tar.gz",
-                                "1c5e807875d26a2470ecc7323daa5b5b9009208a55c3290ac255a909cde15fc6")
+                  FileSource("https://rc.repo.amd.com/rocm/core/tarball/therock-dist-linux-multiarch-10.2.0rc0.tar.gz",
+                                "612f68eabc5bb51905413a9b84d72e0a37a3f0c2a8a880cec018f85219d1890d")
                   )
                end
         end
@@ -1021,7 +1050,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
             "libamdhip64",
             "libhiprtc-builtins",
             "libhiprtc",
-            "librocm_smi64",
+            # librocm_smi64 is gone from ROCm 10.2; XLA and RCCL use libamd_smi
+            # (copied from bazel-bin/_solib_local above) since ROCm 7.13.
             "librocprofiler-register",
             #"librocm_sysdeps_numa",
 
