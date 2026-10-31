@@ -678,6 +678,18 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         $ROCM_PATH/lib/liborigami.so* \
         -t ${libdir}
 
+    # ROCm 10.2's hipblaslt loads its kernels through libtensilelite-host,
+    # which in turn needs LLVM's OpenMP runtime from the toolchain's
+    # target-specific lib directory (on its RUNPATH as
+    # $ORIGIN/llvm/lib/x86_64-unknown-linux-gnu).
+    install -Dvm 755 \
+        $ROCM_PATH/lib/libtensilelite-host.so* \
+        -t ${libdir}
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/llvm/lib/x86_64-unknown-linux-gnu/libomp.so \
+        -t ${libdir}/llvm/lib/x86_64-unknown-linux-gnu
+
     install -Dvm 755 \
         $ROCM_PATH/lib/librocdxg.so* \
         -t ${libdir}
@@ -701,6 +713,24 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
     patchelf --set-rpath '$ORIGIN:$ORIGIN/rocm_sysdeps/lib' bazel-bin/libReactantExtra.so
+
+    # The artifact has to load without a system ROCm: every library a bundled
+    # library needs must be bundled too, or come from glibc / libstdc++.
+    provided=$( (find ${libdir} -name '*.so*' -printf '%f\n'; \
+                 find ${libdir} -name '*.so*' -type f -exec readelf -d {} + | sed -n 's/.*(SONAME).*\[\(.*\)\].*/\1/p') | sort -u )
+    unbundled=0
+    for lib in $(find ${libdir} -name '*.so*' -type f); do
+        for need in $(readelf -d "$lib" | sed -n 's/.*(NEEDED).*\[\(.*\)\].*/\1/p'); do
+            case "$need" in
+                libc.so.6|libm.so.6|libdl.so.2|libpthread.so.0|librt.so.1|libgcc_s.so.1|libstdc++.so.6|ld-linux-x86-64.so.2) continue;;
+            esac
+            if ! grep -qxF "$need" <<< "$provided"; then
+                echo "ERROR: ${lib#${libdir}/} needs $need, which is not bundled"
+                unbundled=1
+            fi
+        done
+    done
+    [ $unbundled -eq 0 ]
 
 fi
 
