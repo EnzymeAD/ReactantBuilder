@@ -87,7 +87,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     sed -i -e "s,vrun ,PRE_FLAGS+=( -L$ROCM_PATH/lib ); vrun ,g" `which clang++`
     cp `which clang` $ROCM_PATH/bin/hipcc
     sed -i "s,/opt/x86_64-linux-musl/bin/clang,$ROCM_PATH/bin/hipcc.real,g" $ROCM_PATH/bin/hipcc
-    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/${XLA_CLANG_VERSION}/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/${XLA_CLANG_VERSION}/include,g" $ROCM_PATH/bin/hipcc
+    sed -i -e "s,PRE_FLAGS+=( -nostdinc++,PRE_FLAGS+=( --offload-compress -Wno-unused-command-line-argument -fuse-cuid=random -nostdinc++ -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/${XLA_CLANG_VERSION}/include/cuda_wrappers -isystem/workspace/bazel_root/097636303b1142f44508c1d8e3494e4b/external/local_config_rocm/rocm/rocm_dist/lib/llvm/lib/clang/${XLA_CLANG_VERSION}/include,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,POST_FLAGS+=( --rocm-path=$ROCM_PATH -B $ROCM_PATH/lib/llvm/bin); export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" $ROCM_PATH/bin/hipcc
     sed -i -e "s,export LD_LIBRARY_PATH,export TMPDIR=/workspace/srcdir/Reactant.jl/deps/ReactantExtra/.tmp; export LD_LIBRARY_PATH,g" /opt/bin/x86_64-linux-musl-cxx11/x86_64-linux-musl-clang
@@ -354,7 +354,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         --repo_env=DEVICE_LIB_PATH=$ROCM_PATH/amdgcn/bitcode
 
         # anything before 942 hits a 128-bit error
-        --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
+        --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx950,gfx1030,gfx1031,gfx1032,gfx1036,gfx1100,gfx1101,gfx1102,gfx1103,gfx1150,gfx1151,gfx1200,gfx1201"
 
         --linkopt="-L$ROCM_PATH/lib/rocm_sysdeps/lib"
 
@@ -710,6 +710,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
      install -Dvm 755 \
         $ROCM_PATH/lib/llvm/amdgcn/bitcode/* \
        -t ${libdir}/llvm/amdgcn/bitcode
+    ln -sf llvm/amdgcn ${libdir}/amdgcn
 
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
@@ -717,10 +718,10 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
     # The artifact has to load without a system ROCm: every library a bundled
     # library needs must be bundled too, or come from glibc / libstdc++.
-    provided=$( (find ${libdir} -name '*.so*' -printf '%f\n'; \
-                 find ${libdir} -name '*.so*' -type f -exec readelf -d {} + | sed -n 's/.*(SONAME).*\[\(.*\)\].*/\1/p') | sort -u )
+    provided=$( (find ${libdir} \( -name '*.so' -o -name '*.so.*' \) -printf '%f\n'; \
+                 find ${libdir} \( -name '*.so' -o -name '*.so.*' \) -type f -exec readelf -d {} + | sed -n 's/.*(SONAME).*\[\(.*\)\].*/\1/p') | sort -u )
     unbundled=0
-    for lib in $(find ${libdir} -name '*.so*' -type f); do
+    for lib in $(find ${libdir} \( -name '*.so' -o -name '*.so.*' \) -type f); do
         for need in $(readelf -d "$lib" | sed -n 's/.*(NEEDED).*\[\(.*\)\].*/\1/p'); do
             case "$need" in
                 libc.so.6|libm.so.6|libdl.so.2|libpthread.so.0|librt.so.1|libgcc_s.so.1|libstdc++.so.6|ld-linux-x86-64.so.2) continue;;
@@ -732,6 +733,50 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         done
     done
     [ $unbundled -eq 0 ]
+
+    # ROCm 10.2 splits device kernels out of the host .so files into per-arch
+    # .kpack archives (searched at $ORIGIN/.kpack via .rocm_kpack_ref) and
+    # Tensile solution catalogs under lib/rocblas/library and
+    # lib/hipblaslt/library. Package one architecture family per ROCm
+    # gpu_version variant so each release tarball stays well below GitHub
+    # Releases' 2 GiB per-asset limit while sharing the Bazel compile above.
+    case "${bb_full_target}" in
+        *gpu_version+10.2_gfx942*)
+            ROCM_ARCHS=(gfx942)
+            ;;
+        *gpu_version+10.2_gfx950*)
+            ROCM_ARCHS=(gfx950)
+            ;;
+        *gpu_version+10.2_rdna*)
+            ROCM_ARCHS=(gfx1030 gfx1031 gfx1032 gfx1036 gfx1100 gfx1101 gfx1102 gfx1103 gfx1150 gfx1151 gfx1200 gfx1201)
+            ;;
+        *)
+            echo "ERROR: unknown ROCm gpu_version in ${bb_full_target}"
+            exit 1
+            ;;
+    esac
+
+    mkdir -p "${libdir}/.kpack" "${libdir}/rocblas/library" "${libdir}/hipblaslt/library"
+    for gfx in "${ROCM_ARCHS[@]}"; do
+        for kpack in blas_lib fft_lib miopen_lib solver_lib sparse_lib; do
+            install -Dm 644 "$ROCM_PATH/.kpack/${kpack}_${gfx}.kpack" -t "${libdir}/.kpack"
+        done
+        if [[ -f "$ROCM_PATH/.kpack/rccl_lib_${gfx}.kpack" ]]; then
+            install -Dm 644 "$ROCM_PATH/.kpack/rccl_lib_${gfx}.kpack" -t "${libdir}/.kpack"
+        fi
+
+        find "$ROCM_PATH/lib/rocblas/library" -maxdepth 1 -type f -name "*${gfx}*" \
+            -exec install -Dm 644 -t "${libdir}/rocblas/library" {} +
+        if [[ -d "$ROCM_PATH/lib/rocblas/library/${gfx}" ]]; then
+            cp -r "$ROCM_PATH/lib/rocblas/library/${gfx}" "${libdir}/rocblas/library/"
+        fi
+        if [[ -d "$ROCM_PATH/lib/hipblaslt/library/${gfx}" ]]; then
+            cp -r "$ROCM_PATH/lib/hipblaslt/library/${gfx}" "${libdir}/hipblaslt/library/"
+        fi
+    done
+    # Keep device code archives non-executable so BinaryBuilder's host ELF
+    # auditor skips AMDGPU .hsaco/.co objects.
+    find "${libdir}/.kpack" "${libdir}/rocblas" "${libdir}/hipblaslt" -type f -exec chmod 644 {} +
 
 fi
 
@@ -796,7 +841,7 @@ augment_platform_block="""
     """
 
 # for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), platform in platforms
-for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "10.2",), platform in platforms
+for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("none", "12.9", "13.1"), rocm_version in ("none", "10.2_gfx942", "10.2_gfx950", "10.2_rdna"), platform in platforms
 
     augmented_platform = deepcopy(platform)
     augmented_platform["mode"] = mode
@@ -869,7 +914,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
 
     # When we're running CI for Enzyme-JAX, only build few platforms
     if !isempty(enzyme_jax_commit)
-        if !(gpu == "rocm" || (Sys.islinux(platform) && gpu == "cuda") || (Sys.isapple(platform) && mode == "opt") || (Sys.iswindows(platform)))
+        if !((gpu == "rocm" && rocm_version == "10.2_rdna") || (Sys.islinux(platform) && gpu == "cuda") || (Sys.isapple(platform) && mode == "opt") || (Sys.iswindows(platform)))
             continue
         end
     end
@@ -900,6 +945,9 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
         "6.5" => "6.5.1",
         "10.0" => "10.0.0",
         "10.2" => "10.2.0",
+        "10.2_gfx942" => "10.2.0",
+        "10.2_gfx950" => "10.2.0",
+        "10.2_rdna" => "10.2.0",
     )
 
     prefix="""
@@ -1001,7 +1049,7 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                   FileSource("https://therock-nightly-tarball.s3.amazonaws.com/therock-dist-linux-gfx94X-dcgpu-6.5.0rc20250610.tar.gz",
                                 "113e44dcd7868ffab92193bbcb8653a374494f0c5b393545f08551ea835a1ee5")
                   )
-               elseif rocm_version == "10.2"
+               elseif startswith(rocm_version, "10.2")
                # XLA builds against 10.0.0 (third_party/gpus/rocm/rocm_redist.bzl);
                # 10.2 is the first release whose libamd_comgr links LLVM statically
                # instead of pulling in lib/llvm/lib/libLLVM.so next to the LLVM in
