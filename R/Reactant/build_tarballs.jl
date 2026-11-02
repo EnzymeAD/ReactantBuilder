@@ -438,6 +438,7 @@ elif [[ "${target}" == *mingw32* ]]; then
                 bazel-bin/libReactantExtra.so-2.params
 
     echo "-lole32" >> bazel-bin/libReactantExtra.so-2.params
+    echo "-loleaut32" >> bazel-bin/libReactantExtra.so-2.params
     echo "-lshlwapi" >> bazel-bin/libReactantExtra.so-2.params
     echo "-lshell32" >> bazel-bin/libReactantExtra.so-2.params
     echo "-lshdocvw" >> bazel-bin/libReactantExtra.so-2.params
