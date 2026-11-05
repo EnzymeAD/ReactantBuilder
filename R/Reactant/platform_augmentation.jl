@@ -4,6 +4,7 @@ const Reactant_UUID = Base.UUID("0192cb87-2b54-54ad-80e0-3be72ad8a3c0")
 const preferences = Base.get_preferences(Reactant_UUID)
 Base.record_compiletime_preference(Reactant_UUID, "mode")
 Base.record_compiletime_preference(Reactant_UUID, "gpu")
+Base.record_compiletime_preference(Reactant_UUID, "gpu_version")
 
 const mode_preference = if haskey(preferences, "mode")
     expected = ("opt", "dbg")
@@ -30,9 +31,10 @@ else
 end
 
 const gpu_version_preference = if haskey(preferences, "gpu_version")
-    expected = ("none", "12.9", "13.1", "10.2")
-    if isa(preferences["gpu_version"], String) && preferences["gpu_version"] in expected
-        preferences["gpu_version"]
+    expected = ("none", "12.9", "13.1", "10.2", "10.2_gfx942", "10.2_gfx950", "10.2_rdna")
+    normalized = isa(preferences["gpu_version"], String) ? replace(preferences["gpu_version"], "-" => "_") : nothing
+    if normalized !== nothing && normalized in expected
+        normalized
     else
         @error "GPU version preference is not valid; expected $(join(expected, ", ", ", or ")), but got '$(preferences["gpu_version"])'"
         nothing
@@ -137,6 +139,53 @@ function amdDriverInitialized()::Bool
     return false
 end
 
+function amdArchFamily(; kfd_nodes_dir::String="/sys/class/kfd/kfd/topology/nodes")::String
+    override = get(ENV, "HSA_OVERRIDE_GFX_VERSION", "")
+    if !isempty(override)
+        parts = split(override, '.')
+        if length(parts) >= 2
+            major = tryparse(Int, parts[1])
+            minor = tryparse(Int, parts[2])
+            stepping = length(parts) >= 3 ? tryparse(Int, parts[3]) : 0
+            if major == 9 && minor == 4 && stepping == 2
+                return "gfx942"
+            elseif major == 9 && minor == 5 && stepping == 0
+                return "gfx950"
+            elseif major in (10, 11, 12)
+                return "rdna"
+            end
+        end
+    end
+
+    has_gfx942 = false
+    has_gfx950 = false
+    if isdir(kfd_nodes_dir)
+        for node_dir in readdir(kfd_nodes_dir; join=true)
+            props_path = joinpath(node_dir, "properties")
+            isfile(props_path) || continue
+            for line in eachline(props_path)
+                if startswith(line, "gfx_target_version ")
+                    ver = tryparse(Int, SubString(line, 20))
+                    if ver !== nothing && ver > 0
+                        if ver == 90402
+                            has_gfx942 = true
+                        elseif ver == 90500
+                            has_gfx950 = true
+                        end
+                    end
+                    break
+                end
+            end
+        end
+    end
+
+    # Prefer datacenter accelerators if paired with a host CPU's display iGPU;
+    # otherwise (including WSL2 /dev/dxg, which only supports RDNA GPUs) use rdna.
+    has_gfx942 && return "gfx942"
+    has_gfx950 && return "gfx950"
+    return "rdna"
+end
+
 
 function augment_platform!(platform::Platform)
 
@@ -194,12 +243,14 @@ function augment_platform!(platform::Platform)
 
         # if we've found a system driver, put a dependency on it,
         # so that we get recompiled if the driver changes.
-	if amdDriverInitialized() && (gpu == "undecided" || no_cuda_devices)
+	if amdDriverInitialized() && (gpu == "undecided" || gpu == "rocm" || no_cuda_devices)
             #roname = ""
             #handle = Libdl.dlopen(roname)
             #path = Libdl.dlpath(handle)
             #Libdl.dlclose(handle)
-	    gpu_version_tag = "10.2"
+	    if !startswith(gpu_version_tag, "10.2_")
+	        gpu_version_tag = "10.2_$(amdArchFamily())"
+	    end
 
             #@debug "Adding include dependency on $(path)"
             #Base.include_dependency(path)
@@ -225,7 +276,10 @@ function augment_platform!(platform::Platform)
         platform["gpu"] = gpu
     end
 
-    gpu_version_tag = get(ENV, "REACTANT_GPU_VERSION", gpu_version_tag)
+    gpu_version_tag = replace(get(ENV, "REACTANT_GPU_VERSION", gpu_version_tag), "-" => "_")
+    if gpu == "rocm" && gpu_version_tag in ("none", "10.2")
+        gpu_version_tag = "10.2_$(amdArchFamily())"
+    end
     if !haskey(platform, "gpu_version")
         platform["gpu_version"] = gpu_version_tag
     end
