@@ -402,16 +402,23 @@ $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]}
 sed -i "s/^cc_library(/cc_library(linkstatic=True,/g" /workspace/bazel_root/*/external/llvm-raw/utils/bazel/llvm-project-overlay/mlir/BUILD.bazel
 sed -i "s/name = \\"protoc\\"/name = \\"protoc\\", features=[\\"fully_static_link\\"]/g" /workspace/bazel_root/*/external/com_google_protobuf/BUILD.bazel
 
+# The target that builds `libReactantExtra.so` is in Enzyme-JAX.  Reactant.jl used to
+# define it in the top-level package of this workspace.
+if grep -q 'name = "libReactantExtra.so"' BUILD; then
+    LIBREACTANTEXTRA_TARGET=//:libReactantExtra.so
+else
+    LIBREACTANTEXTRA_TARGET=@enzyme_ad//src/enzyme_ad/jax/ReactantExtra:libReactantExtra.so
+fi
+
 # Ask Bazel where it puts `libReactantExtra.so` rather than assuming a location: it is in
-# the directory of the package that defines the target `:libReactantExtra.so` refers to,
-# which need not be the top-level package of this workspace.  The `.params` file of the
-# link command and the runfiles are next to the library.  The path is relative to the
+# the directory of the package that defines the target.  The `.params` file of the link
+# command and the runfiles are next to the library.  The path is relative to the
 # workspace directory.
-LIBREACTANTEXTRA=$($BAZEL ${BAZEL_FLAGS[@]} cquery ${BAZEL_BUILD_FLAGS[@]} --output=files :libReactantExtra.so)
-echo "libReactantExtra.so is built at ${LIBREACTANTEXTRA}"
+LIBREACTANTEXTRA=$($BAZEL ${BAZEL_FLAGS[@]} cquery ${BAZEL_BUILD_FLAGS[@]} --output=files ${LIBREACTANTEXTRA_TARGET})
+echo "${LIBREACTANTEXTRA_TARGET} is built at ${LIBREACTANTEXTRA}"
 
 if [[ "${target}" == *-darwin* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
     if [[ "${target}" == aarch64-* ]]; then
         # The host compiler is called at some point, but the GCC installation
         # dir is wrong in the compiler wrapper because it takes the GCC version from
@@ -425,7 +432,7 @@ if [[ "${target}" == *-darwin* ]]; then
     # build system insists on linking with `-whole_archive` also on macOS.  Until we figure
     # out how to make it stop doing this we have to manually do this.  Any other error
     # before the final linking stage is unexpected and will have to be dealt with.
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo "Bazel build failed, proceed to manual linking, check if there are are non-linking errors"
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo "Bazel build failed, proceed to manual linking, check if there are are non-linking errors"
 
     # Manually remove `whole-archive` directive for the linker
     sed -i.bak1 -e "/whole-archive/d" \
@@ -434,7 +441,7 @@ if [[ "${target}" == *-darwin* ]]; then
 
     cc @${LIBREACTANTEXTRA}-2.params
 elif [[ "${target}" == *mingw32* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
     sed -i.bak1 -e "/start-lib/d" \
                 -e "/end-lib/d" \
                 ${LIBREACTANTEXTRA}-2.params
@@ -460,20 +467,20 @@ elif [[ "${target}" == *mingw32* ]]; then
 
     clang @${LIBREACTANTEXTRA}-2.params
 elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
 
     cd ${WORKSPACE}/srcdir
     tar xf libnvvm*.tar.xz
     cd -
 
     cp /workspace/srcdir/libnvvm-linux-x86_64-*/nvvm/bin/cicc /workspace/bazel_root/*/external/cuda_nvvm/nvvm/bin/cicc
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET}
 elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
     cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET}
 else
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET}
 fi
 
 rm -f $(dirname ${LIBREACTANTEXTRA})/libReactantExtraLib*
