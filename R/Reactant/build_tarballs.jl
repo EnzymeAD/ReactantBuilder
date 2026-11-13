@@ -402,8 +402,23 @@ $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]}
 sed -i "s/^cc_library(/cc_library(linkstatic=True,/g" /workspace/bazel_root/*/external/llvm-raw/utils/bazel/llvm-project-overlay/mlir/BUILD.bazel
 sed -i "s/name = \\"protoc\\"/name = \\"protoc\\", features=[\\"fully_static_link\\"]/g" /workspace/bazel_root/*/external/com_google_protobuf/BUILD.bazel
 
+# The target that builds `libReactantExtra.so` is in Enzyme-JAX.  Reactant.jl used to
+# define it in the top-level package of this workspace.
+if grep -q 'name = "libReactantExtra.so"' BUILD; then
+    LIBREACTANTEXTRA_TARGET=//:libReactantExtra.so
+else
+    LIBREACTANTEXTRA_TARGET=@enzyme_ad//src/enzyme_ad/jax/ReactantExtra:libReactantExtra.so
+fi
+
+# Ask Bazel where it puts `libReactantExtra.so` rather than assuming a location: it is in
+# the directory of the package that defines the target.  The `.params` file of the link
+# command and the runfiles are next to the library.  The path is relative to the
+# workspace directory.
+LIBREACTANTEXTRA=$($BAZEL ${BAZEL_FLAGS[@]} cquery ${BAZEL_BUILD_FLAGS[@]} --output=files ${LIBREACTANTEXTRA_TARGET})
+echo "${LIBREACTANTEXTRA_TARGET} is built at ${LIBREACTANTEXTRA}"
+
 if [[ "${target}" == *-darwin* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
     if [[ "${target}" == aarch64-* ]]; then
         # The host compiler is called at some point, but the GCC installation
         # dir is wrong in the compiler wrapper because it takes the GCC version from
@@ -417,59 +432,59 @@ if [[ "${target}" == *-darwin* ]]; then
     # build system insists on linking with `-whole_archive` also on macOS.  Until we figure
     # out how to make it stop doing this we have to manually do this.  Any other error
     # before the final linking stage is unexpected and will have to be dealt with.
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo "Bazel build failed, proceed to manual linking, check if there are are non-linking errors"
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo "Bazel build failed, proceed to manual linking, check if there are are non-linking errors"
 
     # Manually remove `whole-archive` directive for the linker
     sed -i.bak1 -e "/whole-archive/d" \
                 -e "/gc-sections/d" \
-                bazel-bin/libReactantExtra.so-2.params
+                ${LIBREACTANTEXTRA}-2.params
 
-    cc @bazel-bin/libReactantExtra.so-2.params
+    cc @${LIBREACTANTEXTRA}-2.params
 elif [[ "${target}" == *mingw32* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
     sed -i.bak1 -e "/start-lib/d" \
                 -e "/end-lib/d" \
-                bazel-bin/libReactantExtra.so-2.params
+                ${LIBREACTANTEXTRA}-2.params
 
     sed -i.bak1 -e "s/^ws2_32.lib/-lws2_32/g" \
                 -e "s/^ntdll.lib/-lntdll/g" \
                 -e "s/^winhttp.lib/-lwinhttp/g" \
                 -e "/crypt32.lib/d" \
-                bazel-bin/libReactantExtra.so-2.params
+                ${LIBREACTANTEXTRA}-2.params
 
-    echo "-lole32" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-loleaut32" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lshlwapi" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lshell32" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lshdocvw" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lshcore" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lcrypt32" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lbcrypt" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lsecur32" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-lmsvcrt" >> bazel-bin/libReactantExtra.so-2.params
-    echo "-luuid" >> bazel-bin/libReactantExtra.so-2.params
+    echo "-lole32" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-loleaut32" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lshlwapi" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lshell32" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lshdocvw" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lshcore" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lcrypt32" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lbcrypt" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lsecur32" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-lmsvcrt" >> ${LIBREACTANTEXTRA}-2.params
+    echo "-luuid" >> ${LIBREACTANTEXTRA}-2.params
 
 
-    clang @bazel-bin/libReactantExtra.so-2.params
+    clang @${LIBREACTANTEXTRA}-2.params
 elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
 
     cd ${WORKSPACE}/srcdir
     tar xf libnvvm*.tar.xz
     cd -
 
     cp /workspace/srcdir/libnvvm-linux-x86_64-*/nvvm/bin/cicc /workspace/bazel_root/*/external/cuda_nvvm/nvvm/bin/cicc
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET}
 elif [[ "${target}" == aarch64-* ]] && [[ "${HERMETIC_CUDA_VERSION}" == *12.* ]]; then
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so || echo stage1
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET} || echo stage1
     cp /workspace/srcdir/cuda_nvcc-linux-sbsa*-archive/lib/*.a /workspace/bazel_root/*/external/cuda_nvcc/lib/
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET}
 else
-    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} :libReactantExtra.so
+    $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]} ${LIBREACTANTEXTRA_TARGET}
 fi
 
-rm -f bazel-bin/libReactantExtraLib*
-rm -f bazel-bin/libReactant*params
+rm -f $(dirname ${LIBREACTANTEXTRA})/libReactantExtraLib*
+rm -f $(dirname ${LIBREACTANTEXTRA})/libReactant*params
 mkdir -p ${libdir}
 
 if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
@@ -486,7 +501,7 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
 
     # if [[ "${target}" == x86_64-linux-gnu ]] || [[ "${HERMETIC_CUDA_VERSION}" == *13.* ]]; then
     if [[ "${target}" == x86_64-linux-gnu ]]; then
-        NVCC_DIR=(bazel-bin/libReactantExtra.so.runfiles/cuda_nvcc)
+        NVCC_DIR=(${LIBREACTANTEXTRA}.runfiles/cuda_nvcc)
     else
         NVCC_DIR=(/workspace/srcdir/cuda_nvcc-linux-sbsa*-archive)
     fi
@@ -494,7 +509,7 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
     if [ -f "${NVCC_DIR[@]}/nvvm/libdevice/libdevice.10.bc" ]; then
         install -Dvm 644 "${NVCC_DIR[@]}/nvvm/libdevice/libdevice.10.bc" -t "${libdir}/cuda/nvvm/libdevice"
     else
-        install -Dvm 644 bazel-bin/libReactantExtra.so.runfiles/cuda_nvvm/nvvm/libdevice/libdevice.10.bc -t "${libdir}/cuda/nvvm/libdevice"
+        install -Dvm 644 ${LIBREACTANTEXTRA}.runfiles/cuda_nvvm/nvvm/libdevice/libdevice.10.bc -t "${libdir}/cuda/nvvm/libdevice"
     fi
 
     install -Dvm 755 "${NVCC_DIR[@]}/bin/ptxas" -t "${libdir}/cuda/bin"
@@ -502,7 +517,7 @@ if [[ "${bb_full_target}" == *gpu+cuda* ]]; then
 
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
-    patchelf --set-rpath '$ORIGIN' bazel-bin/libReactantExtra.so
+    patchelf --set-rpath '$ORIGIN' ${LIBREACTANTEXTRA}
 
 fi
 
@@ -713,7 +728,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
-    patchelf --set-rpath '$ORIGIN:$ORIGIN/rocm_sysdeps/lib' bazel-bin/libReactantExtra.so
+    patchelf --set-rpath '$ORIGIN:$ORIGIN/rocm_sysdeps/lib' ${LIBREACTANTEXTRA}
 
     # The artifact has to load without a system ROCm: every library a bundled
     # library needs must be bundled too, or come from glibc / libstdc++.
@@ -736,7 +751,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 fi
 
 
-install -Dvm 755 bazel-bin/libReactantExtra.so "${libdir}/libReactantExtra.${dlext}"
+install -Dvm 755 ${LIBREACTANTEXTRA} "${libdir}/libReactantExtra.${dlext}"
 install_license ../../LICENSE
 """
 
