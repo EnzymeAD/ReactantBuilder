@@ -725,6 +725,23 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
      install -Dvm 755 \
         $ROCM_PATH/lib/llvm/amdgcn/bitcode/* \
        -t ${libdir}/llvm/amdgcn/bitcode
+    ln -sf llvm/amdgcn ${libdir}/amdgcn
+
+    # `enzymexla-gpu-module-to-binary` (MLIR's ROCDL target) links device
+    # kernels out-of-process via `<toolkit>/llvm/bin/ld.lld` against
+    # `<toolkit>/amdgcn/bitcode/*.bc`. Keep `lld`'s `libLLVM.so.*` in a private
+    # `llvm/lld-lib` directory rather than `llvm/lib` (which is on `RUNPATH` of
+    # `libroctx64` / `libhiprtc-builtins`) so it can never be loaded in-process.
+    install -Dvm 755 \
+        $ROCM_PATH/lib/llvm/bin/lld \
+        ${libdir}/llvm/bin/lld
+    patchelf --set-rpath '$ORIGIN/../lld-lib:$ORIGIN/../../rocm_sysdeps/lib' \
+        ${libdir}/llvm/bin/lld
+    ln -sf lld ${libdir}/llvm/bin/ld.lld
+
+    install -Dvm 755 \
+        $ROCM_PATH/lib/llvm/lib/libLLVM.so.* \
+        -t ${libdir}/llvm/lld-lib
 
     # Simplify ridiculously long rpath of `libReactantExtra.so`,
     # we moved all deps in `${libdir}` anyway.
@@ -735,7 +752,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
     provided=$( (find ${libdir} -name '*.so*' -printf '%f\n'; \
                  find ${libdir} -name '*.so*' -type f -exec readelf -d {} + | sed -n 's/.*(SONAME).*\[\(.*\)\].*/\1/p') | sort -u )
     unbundled=0
-    for lib in $(find ${libdir} -name '*.so*' -type f); do
+    for lib in $(find ${libdir} -name '*.so*' -type f) ${libdir}/llvm/bin/lld; do
         for need in $(readelf -d "$lib" | sed -n 's/.*(NEEDED).*\[\(.*\)\].*/\1/p'); do
             case "$need" in
                 libc.so.6|libm.so.6|libdl.so.2|libpthread.so.0|librt.so.1|libgcc_s.so.1|libstdc++.so.6|ld-linux-x86-64.so.2) continue;;
@@ -1111,6 +1128,8 @@ for gpu in ("none", "cuda", "rocm"), mode in ("opt", "dbg"), cuda_version in ("n
                   LibraryProduct([lib, lib], Symbol(san);
                                  dont_dlopen=true, dlopen_flags=[:RTLD_LOCAL]))
         end
+        push!(products, ExecutableProduct(["ld.lld"], :ld_lld, "lib/llvm/bin"))
+        push!(products, FileProduct("lib/amdgcn/bitcode/ocml.bc", :ocml_bc))
     end
 
     push!(builds, (;
