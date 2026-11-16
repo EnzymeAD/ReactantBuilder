@@ -7,7 +7,7 @@ include(joinpath(YGGDRASIL_DIR, "platforms", "macos_sdks.jl"))
 
 name = "Reactant"
 repo = "https://github.com/EnzymeAD/Reactant.jl.git"
-reactant_commit = "b071afabf87b0e626eb7a3761f644ae6fbe8e19a"
+reactant_commit = "cff53179c1db4ae77b3f778764d7712c41b88e10"
 version = v"0.0.444"
 
 sources = [
@@ -402,18 +402,7 @@ $BAZEL ${BAZEL_FLAGS[@]} build ${BAZEL_BUILD_FLAGS[@]}
 sed -i "s/^cc_library(/cc_library(linkstatic=True,/g" /workspace/bazel_root/*/external/llvm-raw/utils/bazel/llvm-project-overlay/mlir/BUILD.bazel
 sed -i "s/name = \\"protoc\\"/name = \\"protoc\\", features=[\\"fully_static_link\\"]/g" /workspace/bazel_root/*/external/com_google_protobuf/BUILD.bazel
 
-# The target that builds `libReactantExtra.so` is in Enzyme-JAX.  Reactant.jl used to
-# define it in the top-level package of this workspace.
-if grep -q 'name = "libReactantExtra.so"' BUILD; then
-    LIBREACTANTEXTRA_TARGET=//:libReactantExtra.so
-else
-    LIBREACTANTEXTRA_TARGET=@enzyme_ad//src/enzyme_ad/jax/ReactantExtra:libReactantExtra.so
-fi
-
-# Ask Bazel where it puts `libReactantExtra.so` rather than assuming a location: it is in
-# the directory of the package that defines the target.  The `.params` file of the link
-# command and the runfiles are next to the library.  The path is relative to the
-# workspace directory.
+LIBREACTANTEXTRA_TARGET=@enzyme_ad//src/enzyme_ad/jax/ReactantExtra:libReactantExtra.so
 LIBREACTANTEXTRA=$($BAZEL ${BAZEL_FLAGS[@]} cquery ${BAZEL_BUILD_FLAGS[@]} --output=files ${LIBREACTANTEXTRA_TARGET})
 echo "${LIBREACTANTEXTRA_TARGET} is built at ${LIBREACTANTEXTRA}"
 
