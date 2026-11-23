@@ -54,6 +54,13 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
 
     export ROCM_PATH=$WORKSPACE/srcdir
 
+    # GPU architectures the artifact supports: XLA's HIP kernels are compiled
+    # for these, and the ROCm libraries' per-architecture device code is
+    # bundled for these. A device whose architecture is not listed fails at the
+    # first kernel launch with `hipErrorInvalidDeviceFunction`.
+    # anything before 942 hits a 128-bit error
+    ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
+
     # ROCm does not seem to get on well with ccache
     # https://github.com/ROCm/TheRock/blob/main/docs/development/windows_support.md#lld-link-error-duplicate-symbol
     export USE_CCACHE=false
@@ -353,8 +360,7 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         --repo_env=HIP_CLANG_PATH=$ROCM_PATH/lib/llvm/bin
         --repo_env=DEVICE_LIB_PATH=$ROCM_PATH/amdgcn/bitcode
 
-        # anything before 942 hits a 128-bit error
-        --action_env=TF_ROCM_AMDGPU_TARGETS="gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
+        --action_env=TF_ROCM_AMDGPU_TARGETS="$ROCM_AMDGPU_TARGETS"
 
         --linkopt="-L$ROCM_PATH/lib/rocm_sysdeps/lib"
 
@@ -715,6 +721,47 @@ if [[ "${bb_full_target}" == *gpu+rocm* ]]; then
         $ROCM_PATH/lib/llvm/amdgcn/bitcode/* \
        -t ${libdir}/llvm/amdgcn/bitcode
     ln -sf llvm/amdgcn ${libdir}/amdgcn
+
+    # The multi-arch ROCm dist keeps the libraries' device code out of the
+    # shared objects: each library loads `../.kpack/<name>_lib_<arch>.kpack`
+    # relative to itself for the architecture of the running device, and
+    # rocBLAS / hipBLASLt additionally load their Tensile kernel libraries
+    # from `rocblas/library` / `hipblaslt/library` next to the shared object.
+    # Bundle these for the architectures in ROCM_AMDGPU_TARGETS.
+    kpack_names=$(grep -aoh '\.kpack/[a-z_]*_lib_' ${libdir}/*.so | sed 's,^\.kpack/,,' | sort -u)
+    echo "Bundled libraries load kpack archives:" $kpack_names
+    # rocBLAS is always bundled, so an empty list means the layout changed.
+    grep -qx 'blas_lib_' <<< "$kpack_names"
+    for arch in ${ROCM_AMDGPU_TARGETS//,/ }; do
+        for name in $kpack_names; do
+            kpack=$ROCM_PATH/.kpack/${name}${arch}.kpack
+            if [ -f "$kpack" ]; then
+                install -Dvm 644 "$kpack" -t ${prefix}/.kpack
+            elif [ "$name" = blas_lib_ ]; then
+                echo "ERROR: ROCm dist has no $kpack"
+                exit 1
+            else
+                # Not every library supports every architecture.
+                echo "NOTE: ROCm dist has no ${name}${arch}.kpack"
+            fi
+        done
+
+        # Tensile libraries are either in a per-architecture subdirectory or,
+        # for some architectures in rocBLAS, directly in `library`.
+        for lib in rocblas hipblaslt; do
+            src=$ROCM_PATH/lib/$lib/library
+            dst=${libdir}/$lib/library
+            if [ -d $src/$arch ]; then
+                mkdir -p $dst
+                cp -av $src/$arch $dst/
+            elif [ -n "$(find $src -maxdepth 1 -type f -name "*${arch}[.-]*" -print -quit)" ]; then
+                mkdir -p $dst
+                find $src -maxdepth 1 -type f -name "*${arch}[.-]*" -exec cp -av -t $dst {} +
+            else
+                echo "NOTE: ROCm dist has no $lib Tensile library for $arch"
+            fi
+        done
+    done
 
     # `enzymexla-gpu-module-to-binary` (MLIR's ROCDL target) links device
     # kernels out-of-process via `<toolkit>/llvm/bin/ld.lld` against
