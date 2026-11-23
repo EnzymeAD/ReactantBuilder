@@ -147,9 +147,14 @@ function augment_platform!(platform::Platform)
 
     # "none" is for no gpu, but use "nothing" here to distinguish the case where the
     # user explicitly asked for no GPU in the preferences.
-    gpu = something(gpu_preference, "undecided")
+    # The environment variables take precedence over the preferences. They are
+    # resolved before discovery so that a GPU backend requested without a version
+    # (e.g. `gpu = "rocm"` alone) still gets a version tag that matches an artifact.
+    gpu = get(ENV, "REACTANT_GPU", something(gpu_preference, "undecided"))
 
-    gpu_version_tag = something(gpu_version_preference, "none")
+    gpu_version_tag = get(
+        ENV, "REACTANT_GPU_VERSION", something(gpu_version_preference, "none")
+    )
 
     # Don't do GPU discovery on platforms for which we don't have GPU builds.
     # Keep this in sync with list of platforms for which we actually build with GPU support.
@@ -166,7 +171,7 @@ function augment_platform!(platform::Platform)
 
         # if we've found a system driver, put a dependency on it,
         # so that we get recompiled if the driver changes.
-        if cuname != "" && gpu == "undecided"
+        if cuname != "" && (gpu == "undecided" || gpu == "cuda")
             handle = Libdl.dlopen(cuname)
             current_cuda_version = cuDriverGetVersion(handle)
 	        device_count = cuDeviceGetCount(handle)
@@ -174,7 +179,7 @@ function augment_platform!(platform::Platform)
             Libdl.dlclose(handle)
 
             if gpu_version_tag == "none" && current_cuda_version isa VersionNumber
-		        if device_count == nothing || device_count == 0
+		        if gpu == "undecided" && (device_count == nothing || device_count == 0)
 		            no_cuda_devices = true
 		        end
                 if v"12" <= current_cuda_version < v"13"
@@ -194,7 +199,12 @@ function augment_platform!(platform::Platform)
 
         # if we've found a system driver, put a dependency on it,
         # so that we get recompiled if the driver changes.
-	if amdDriverInitialized() && (gpu == "undecided" || no_cuda_devices)
+	if gpu == "rocm"
+            # ROCm was requested explicitly; there is a single ROCm build.
+            if gpu_version_tag == "none"
+                gpu_version_tag = "10.2"
+            end
+	elseif amdDriverInitialized() && (gpu == "undecided" || no_cuda_devices)
             #roname = ""
             #handle = Libdl.dlopen(roname)
             #path = Libdl.dlpath(handle)
@@ -220,12 +230,14 @@ function augment_platform!(platform::Platform)
         gpu = "none"
     end
 
-    gpu = get(ENV, "REACTANT_GPU", gpu)
+    if gpu == "cuda" && gpu_version_tag == "none"
+        @error "CUDA was requested, but no supported CUDA driver was found to select a build for; set the `gpu_version` preference (or `REACTANT_GPU_VERSION`) to \"12.9\" or \"13.1\""
+    end
+
     if !haskey(platform, "gpu")
         platform["gpu"] = gpu
     end
 
-    gpu_version_tag = get(ENV, "REACTANT_GPU_VERSION", gpu_version_tag)
     if !haskey(platform, "gpu_version")
         platform["gpu_version"] = gpu_version_tag
     end
